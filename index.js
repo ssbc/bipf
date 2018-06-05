@@ -190,6 +190,7 @@ function decode (buffer, start) {
 }
 
 function seekKey (buffer, start, target) {
+  if(Buffer.isBuffer(target)) target = target.toString()
   var targetLength = Buffer.byteLength(target) //Buffer.isBuffer(target) ? target.length : Buffer.byteLength(target)
   var tag = varint.decode(buffer, start)
   var len = tag >> TAG_SIZE
