@@ -124,11 +124,19 @@ tape('perf', function (t) {
   console.log('JSON.stringify(JSON.parse())', Date.now() - start)
 
   start = Date.now()
-  var dependencies = new Buffer('dependencies'), varint = new Buffer('varint')
   for(var i = 0; i < N; i++) {
     binary.decode(b, binary.seekKey(b, binary.seekKey(b, 0, 'dependencies'), 'varint'))
   }
-  console.log('binary.seek', Date.now() - start)
+  console.log('binary.seek(string)', Date.now() - start)
+
+  start = Date.now()
+  var dependencies = new Buffer('dependencies')
+  var varint = new Buffer('varint')
+  for(var i = 0; i < N; i++) {
+    var c, d
+    binary.decode(b, d=binary.seekKey(b, c = binary.seekKey(b, 0, dependencies), varint))
+  }
+  console.log('binary.seek(buffer)', Date.now() - start)
 
   t.end()
 })
