@@ -119,18 +119,18 @@ var decoders = [
       c += varint.decode.bytes
       //TODO: positive integers keys are always in order!
       //floats or negative numbers encoded as strings. or may not be keys?
-      if(type === 7) throw new Error('reserved type')
+      if(type === 7) throw new Error('reserved type:key')
       var key = decoders[type](buffer, start+c, len)
       c += len
 
       var tag2 = varint.decode(buffer, start+c)
       var type2 = tag2 & TAG_MASK
+      if(type2 === 7) throw new Error('reserved type:value')
       var len2 = tag2 >> TAG_SIZE
       c += varint.decode.bytes
-
       var value = decoders[type2](buffer, start+c, len2)
 
-      c+= len
+      c+= len2
       o[key] = value
     }
     return o
@@ -174,7 +174,7 @@ function encode (value, buffer, start) {
   if(type === 7) throw new Error('reserved type')
   varint.encode(len << TAG_SIZE | type, buffer, start)
   var bytes = varint.encode.bytes
-  return encoders[type](value, buffer, start+varint.encode.bytes) + bytes
+  return encoders[type](value, buffer, start+bytes) + bytes
 }
 
 function decode (buffer, start) {
@@ -189,14 +189,38 @@ function decode (buffer, start) {
   return value
 }
 
+function seekKey (buffer, start, target) {
+  var targetLength = Buffer.byteLength(target) //Buffer.isBuffer(target) ? target.length : Buffer.byteLength(target)
+  var tag = varint.decode(buffer, start)
+  var len = tag >> TAG_SIZE
+  var type = tag & TAG_MASK
+  if(type != OBJECT) throw new Error('expected object')
+  for(var c = varint.decode.bytes; c < len;) {
+    var key_tag = varint.decode(buffer, start+c)
+    c += varint.decode.bytes
+    var key_len = key_tag >> TAG_SIZE
+    var key_type = key_tag & TAG_MASK
+    if(key_type === STRING && targetLength === key_len) {
+      var key = decoders[STRING](buffer, c, key_len)
+      if(key === target)
+        return c+key_len //just return a pointer!
+    }
+    c += key_len
+    var value_tag = varint.decode(buffer, start+c)
+    c += varint.decode.bytes
+    var value_len = value_tag >> TAG_SIZE
+    c += value_len
+  }
+  return -1
+}
+
 module.exports = {
   encode: encode,
   decode: decode,
   encodingLength: encodingLength,
-  buffer: true
+  buffer: true,
+  seekKey: seekKey
 }
-
-
 
 
 
