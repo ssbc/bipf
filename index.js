@@ -190,7 +190,8 @@ function decode (buffer, start) {
 }
 
 function seekKey (buffer, start, target) {
-  var targetLength = Buffer.byteLength(target) //Buffer.isBuffer(target) ? target.length : Buffer.byteLength(target)
+  target = Buffer.isBuffer(target) ? target : new Buffer(target)
+  var targetLength = target.length // = Buffer.byteLength(target) //Buffer.isBuffer(target) ? target.length : Buffer.byteLength(target)
   var tag = varint.decode(buffer, start)
   var len = tag >> TAG_SIZE
   var type = tag & TAG_MASK
@@ -201,9 +202,15 @@ function seekKey (buffer, start, target) {
     var key_len = key_tag >> TAG_SIZE
     var key_type = key_tag & TAG_MASK
     if(key_type === STRING && targetLength === key_len) {
+//      if(target.compare(buffer, c, c+targetLength, 0, targetLength) === 0)
+//        return c+key_len
+      if(buffer.compare(target, 0, targetLength, c, c+targetLength) === 0)
+        return c+key_len
+      /*
       var key = decoders[STRING](buffer, c, key_len)
       if(key === target)
         return c+key_len //just return a pointer!
+      */
     }
     c += key_len
     var value_tag = varint.decode(buffer, start+c)
@@ -221,6 +228,8 @@ module.exports = {
   buffer: true,
   seekKey: seekKey
 }
+
+
 
 
 
