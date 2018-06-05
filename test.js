@@ -56,7 +56,7 @@ function test (value) {
     var l = binary.encode(value, b, 0)
     console.log('encoded:', b.slice(0, l))
     var jl = Buffer.byteLength(JSON.stringify(value))
-    console.log('length:', l, 'json-length:',)
+    console.log('length:', l, 'json-length:', jl)
     if(l > jl) console.log("WARNING: binary encoding longer than json for:", value)
     if(l == 1)
       t.equal(b[0]>>3, 0, 'single byte encodings must have zero length in tag')
@@ -84,4 +84,52 @@ test([1,2,3,4,5,6,7,8,9])
 test('hello')
 test({foo: true})
 test([-1, {foo: true}, new Buffer('deadbeef', 'hex')])
+test(require('./package.json'))
+
+tape('perf', function (t) {
+  var value = require('./package.json')
+  var b = Buffer.alloc(binary.encodingLength(value))
+  var start = Date.now(), json
+  var json = JSON.stringify(value)
+  var buffer = new Buffer(JSON.stringify(value))
+  var N = 10000
+  for(var i = 0; i < N; i++) {
+    binary.encode(value, b, 0)
+  }
+  console.log('binary.encode', Date.now() - start)
+  start = Date.now()
+  for(var i = 0; i < N; i++) {
+    JSON.stringify(value)
+  }
+  console.log('JSON.stringify', Date.now() - start)
+  start = Date.now()
+  for(var i = 0; i < N; i++) {
+    binary.decode(b, 0)
+  }
+  console.log('binary.decode', Date.now() - start)
+  start = Date.now()
+  for(var i = 0; i < N; i++) {
+    JSON.parse(json)
+  }
+  console.log('JSON.parse', Date.now() - start)
+  start = Date.now()
+  for(var i = 0; i < N; i++) {
+    JSON.parse(buffer)
+  }
+  console.log('JSON.parse(buffer)', Date.now() - start)
+  start = Date.now()
+  for(var i = 0; i < N; i++) {
+    JSON.stringify(JSON.parse(json))
+  }
+  console.log('JSON.stringify(JSON.parse())', Date.now() - start)
+
+  start = Date.now()
+  var dependencies = new Buffer('dependencies'), varint = new Buffer('varint')
+  for(var i = 0; i < N; i++) {
+    binary.decode(b, binary.seekKey(b, binary.seekKey(b, 0, 'dependencies'), 'varint'))
+  }
+  console.log('binary.seek', Date.now() - start)
+
+  t.end()
+})
 
