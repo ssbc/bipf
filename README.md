@@ -53,6 +53,8 @@ that is not much of a problem. Although, since subobjects
 are fully valid as an encoded value, you can easily
 copy a subobject into a new object, etc, without re-encoding.
 
+## benchmark
+
 I did a simple benchmark, where I encoded and decoded
 this module's package.json file in various ways. Please
 not that I am comparing the performance of code written
@@ -60,7 +62,8 @@ in C with code written in javascript. If the javascript
 is within 10x the performance of the C then we are doing
 well! (and a C implementation would likely close that gap)
 
-## benchmark
+The measurement is milliseconds to perform 10k operations.
+Code is at the end of `./test.js`
 
 ```
 binary.encode 228
@@ -126,4 +129,5 @@ that implementations throw an error.
 ## License
 
 MIT
+
 
