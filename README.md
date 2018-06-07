@@ -8,7 +8,7 @@ encoding with in-place field access. NOT READY YET
 every item is encoded with a varint shifted 3 bits,
 with a type stored in the lowest 3 bits. Then the encoding of the value.
 ```
-<tag: varint(encoding_length(value)) << 3 | type><value>
+<tag: varint(encoding_length(value) << 3 | type)><value>
 ```
 the type indicates the encoding of the value.
 valid types are:
