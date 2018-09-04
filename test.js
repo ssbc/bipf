@@ -141,3 +141,24 @@ tape('perf', function (t) {
   t.end()
 })
 
+
+
+tape('seekPath', function (t) {
+  var path = ['dependencies', 'varint']
+  var path_buf = Buffer.alloc(binary.encodingLength(path))
+  binary.encode(path, path_buf, 0)
+
+
+  var pkg = require('./package.json')
+  var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
+  binary.encode(pkg, pkg_buf, 0)
+
+  t.equal(
+    binary.decode(pkg_buf, binary.seekPath(pkg_buf, 0, path_buf, 0)),
+    pkg.dependencies.varint
+  )
+
+  t.end()
+})
+
+
