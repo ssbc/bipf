@@ -195,7 +195,7 @@ function seekKey (buffer, start, target) {
   var tag = varint.decode(buffer, start)
   var len = tag >> TAG_SIZE
   var type = tag & TAG_MASK
-  if(type != OBJECT) throw new Error('expected object')
+  if(type != OBJECT) return -1
   for(var c = varint.decode.bytes; c < len;) {
     var key_tag = varint.decode(buffer, start+c)
     c += varint.decode.bytes
@@ -214,11 +214,45 @@ function seekKey (buffer, start, target) {
   return -1
 }
 
+//TODO rewrite the seek methods so that there is minimal copies.
+
+function seekPath (buffer, start, target, target_start) {
+  target_start = target_start || 0
+  var ary = decode(target, target_start)
+  if(!Array.isArray(ary)) throw new Error('path must be encoded array')
+  for(var i = 0; i < ary.length; i++) {
+    var string = ary[i]
+    start = seekKey(buffer, start, string)
+    if(start == -1) return -1
+  }
+  return start
+}
+
 module.exports = {
   encode: encode,
   decode: decode,
   encodingLength: encodingLength,
   buffer: true,
-  seekKey: seekKey
+  getValueType: getType,
+  getEncodedType: function (buffer, start) {
+    return varint.decode(buffer, start)
+  },
+  seekKey: seekKey,
+  seekPath: seekPath,
+  types: {
+    string: STRING,
+    buffer: BUFFER,
+    int: INT,
+    double: DOUBLE,
+    array: ARRAY,
+    object: OBJECT,
+    boolnull: BOOLNULL,
+    reserved: RESERVED,
+  }
 }
+
+
+
+
+
 
