@@ -126,8 +126,79 @@ I will not consider this module _ready_ until there
 are tests that cover these invalid cases, to ensure
 that implementations throw an error.
 
+## api
+
+`encode, decode, encodingLength` follow the interface
+specified by [`abstract-encoding`](https://github.com/mafintosh/abstract-encoding)
+
+### encode (value, buffer, start) => length
+
+write `value` to `buffer` from start.
+returns the number of bytes used.
+
+### decode (buffer, start) => value
+
+read the next value from `buffer` at `start`.
+returns the value, and sets `decode.bytes` to number
+of bytes used.
+
+### encodingLength (value) => length
+
+returns the length needed to encode `value`
+
+### getValueType (value) => type
+
+returns the type tag that will be used to encode this type.
+
+### getEncodedType (buffer, start) => type
+
+get the `type` tag at `start`
+
+### types.{string,buffer,int,double,array,object,boolnull,reserved}
+
+an object containing the type tags.
+
+### seekKey (buffer, start, target) => pointer
+
+seek for a key `target` within an object. If
+`getEncodedType(buffer, start) !== types.object` then will return
+`-1`. Otherwise, seekKey will iterate over the encoding object
+and return a pointer to where it starts.
+
+Since this defines a recursive encoding, a pointer
+to any valid sub-encoding is a valid start value.
+
+``` js
+var obj = {
+  foo: 1,
+  bar: true,
+  baz: 'hello'
+}
+//allocate a correctly sized buffer
+var length = b.encodingLength(obj)
+var buffer = Buffer.alloc(length)
+
+//encode object to buffer
+b.encode(obj, buffer, 0)
+
+//parse entire object and read a single value
+console.log(b.decode(buffer, 0).baz)
+
+//seek and decode a single value
+console.log(b.decode(buffer, b.seekKey(buffer, 0, 'baz')))
+```
+
+see performance section for discussion on the performance
+of seek - if it's only needed to parse a couple of elements,
+it can be significantly faster than parsing.
+
+### seekPath (buffer, start, path, path_start) => pointer
+
+The same as `seekKey`, except for a recursive path.
+`path` should be an array of strings encoded with this format.
+`path_start` should a pointer to the encoded array in that buffer.
+
 ## License
 
 MIT
-
 
