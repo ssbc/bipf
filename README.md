@@ -1,12 +1,39 @@
-# binary
+# bipf
 
-flume binary codec, a compact, cannonical, schemaless, json equivalent,
-encoding with in-place field access. NOT READY YET
+Binary In-Place Format. A binary format designed for in-place (without parsing) reads,
+with schemaless json-like semantics.
+
+## motivation
+
+### in-place reads
+
+In a database there are many cases where you need to read a bunch of records,
+filter out most of it (if one or two fields do not match) and then immediately write
+whats left to a network socket. With json, this means parsing possibly hundreds of thousands
+of json objects (which is suprisingly slow), and then reserializing whats left.
+An inplace format doesn't actually require parsing as a whole at all. You only need to parse
+the fields you actually read, and using length delimited fields instead of escapes, means
+you do not have to look at every byte to parse a field.
+
+
+### length delimited collections
+
+Unfortunately, most binary json-like formats (such as msgpack and cbor) use element counts
+on collections (objects and arrays, in json-land) this means to find the end of a collection,
+you have to step past each item in it (including the fields in any object contained inside of it).
+However, if the collections are length delimited, meaning marked by the encoded byte length of the object,
+not the number of items inside it, then it's easy to jump right to the end of the object in one go.
+For this reason, databases (for example, mongodb, and couchdb) use length delimited collections.
 
 ## format
 
-every item is encoded with a varint shifted 3 bits,
-with a type stored in the lowest 3 bits. Then the encoding of the value.
+Every type of field is encoded with a type tag and a length packed into a varint.
+This means that short types have a one byte tag, and one byte value.
+The type is stored in the lowest 3 bits, and the length the higher bits.
+Since a varint stores values up to 128 bits in a single byte, values less than 16 bytes
+long have a one byte tag, and values up to 8k long have a two byte tag, values up to 1048576 bytes
+have a 3 byte tag, and so on.
+
 ```
 <tag: varint(encoding_length(value) << 3 | type)><value>
 ```
@@ -14,15 +41,14 @@ the type indicates the encoding of the value.
 valid types are:
 
 ```
-STRING : 0  // utf8 encoded string
-BUFFER : 1  // raw binary buffer
-INT    : 2  // little endian 32 bit integer
-DOUBLE : 3  // little endian 64 bit float
-ARRAY  : 4  // array of any other value
-OBJECT : 5  // list of string: value pairs
-BOOLNULL:6  // a boolean, or null.
-//7 is reserved (not intended to be used)
-
+STRING  : 0  // utf8 encoded string
+BUFFER  : 1  // raw binary buffer
+INT     : 2  // little endian 32 bit integer
+DOUBLE  : 3  // little endian 64 bit float
+ARRAY   : 4  // array of any other value
+OBJECT  : 5  // list of string: value pairs
+BOOLNULL: 6  // a boolean, or null.
+EXTENDED: 7  // custom type. specific type should be indicated by varint at start of buffer.
 ```
 
 All values must have a correct length field. This makes it possible
@@ -33,7 +59,6 @@ Since object and array fields also begin with a length, you can jump past
 them if you know the do not contain the value you are looking for.
 This means that seeking inside a more tree like object is more efficient
 than seeking into a more list like object!
-
 ## performance
 
 This design is optimized for the performance of in-place
@@ -47,7 +72,7 @@ pass around the binary object, reading fields out when
 necessary.
 
 Because of the length encoding, the ability to update
-inplace is very limited (not recommended actualy)
+in-place is very limited (not recommended actualy)
 but if you are building a system around immutable data,
 that is not much of a problem. Although, since subobjects
 are fully valid as an encoded value, you can easily
@@ -91,10 +116,11 @@ So it's two comparisons and decoding a string out)
 So, in JSON land, that usually means reading it,
 parsing it, checking it, stringifying it again.
 This involves reading each byte in the input and
-allocating memory. Then traversing that object in
-memory and writing something to a string
-(more memory allocation, and all this memory allocation
-impacts the GC in a memory managed language)
+allocating memory for the parsed object.
+Then traversing that object in memory and writing
+something to a string (more memory allocation,
+and all this memory allocation
+means the garbage collector needs to handle it too)
 
 But if we have in-place reads, we just read raw binary,
 seek into the appropiate places to check wether it's
