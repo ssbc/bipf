@@ -190,8 +190,9 @@ function decode (buffer, start) {
 }
 
 function seekKey (buffer, start, target) {
-  target = Buffer.isBuffer(target) ? target : new Buffer(target)
-  var targetLength = target.length // = Buffer.byteLength(target) //Buffer.isBuffer(target) ? target.length : Buffer.byteLength(target)
+  if(start === -1) return -1
+  target = Buffer.isBuffer(target) ? target : Buffer.from(target)
+  var targetLength = target.length
   var tag = varint.decode(buffer, start)
   var len = tag >> TAG_SIZE
   var type = tag & TAG_MASK
@@ -201,15 +202,36 @@ function seekKey (buffer, start, target) {
     c += varint.decode.bytes
     var key_len = key_tag >> TAG_SIZE
     var key_type = key_tag & TAG_MASK
-    if(key_type === STRING && targetLength === key_len) {
+    if(key_type === STRING && targetLength === key_len)
       if(buffer.compare(target, 0, targetLength, start+c, start+c+targetLength) === 0)
         return start+c+key_len
-    }
+
     c += key_len
     var value_tag = varint.decode(buffer, start+c)
     c += varint.decode.bytes
     var value_len = value_tag >> TAG_SIZE
     c += value_len
+  }
+  return -1
+}
+
+function seekKey2 (buffer, start, target, t_start) {
+  var tag = varint.decode(buffer, start)
+  var c = varint.decode.bytes
+  var len = tag >> TAG_SIZE
+  var type = tag & TAG_MASK
+  var t_tag = varint.decode(target, t_start)
+  var t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
+  if(type != OBJECT) return -1
+  for(; c + t_length < len;) {
+    var b_tag = varint.decode(buffer, start+c)
+    
+    if(b_tag === t_tag && buffer.compare(target, t_start, t_length, start+c, start+c+t_length) === 0)
+      return start+c+(b_tag>>TAG_SIZE)+varint.decode.bytes
+    else {
+      c += (b_tag >> TAG_SIZE) + varint.decode.bytes //key
+      c += (varint.decode(buffer, start+c) >> TAG_SIZE) + varint.decode.bytes //value
+    }
   }
   return -1
 }
@@ -223,9 +245,127 @@ function seekPath (buffer, start, target, target_start) {
   for(var i = 0; i < ary.length; i++) {
     var string = ary[i]
     start = seekKey(buffer, start, string)
-    if(start == -1) return -1
+    if(start === -1) return -1
   }
   return start
+}
+
+//for some reason, seek path
+function createSeekPathSrc(target) {
+  return (
+    '"use strict";\n' + //go fast sauce!
+    target.map(function (e, i) {
+      return '  var k'+i+' = Buffer.from('+ JSON.stringify(e) +');' //strings only!
+    }).join('\n') + '\n'+
+    "  return function (buffer, start) {\n"+
+    target.map(function (_, i) {
+      return "  start = seekKey(buffer, start, k"+i+")"
+    }).join('\n') + '\n' +
+    '  return start;\n'+
+    '}\n'
+  )
+}
+
+function createSeekPath(target) {
+  return new Function('seekKey', createSeekPathSrc(target))(seekKey)
+}
+
+function compareString (buffer, start, target) {
+  if(start === -1) return null
+  target = Buffer.isBuffer(target) ? target : Buffer.from(target)
+  var tag = varint.decode(buffer, start)
+  if(tag & TAG_MASK !== STRING) return null
+  var len = tag >> TAG_SIZE
+  var _len = Math.min(target.length, len)
+  return buffer.compare(
+    target, 0, _len,
+    start + varint.decode.bytes, start + varint.decode.bytes + _len
+  ) || target.length - len
+}
+
+function compare (buffer1, start1, buffer2, start2) {
+  //handle null pointers...
+//  console.log(start1, start2)
+  if(start1 === -1 || start2 === -1)
+    return start1 - start2
+
+  var tag1 = varint.decode(buffer1, start1)
+  var len1 = varint.decode.bytes
+  var tag2 = varint.decode(buffer2, start2)
+  var len2 = varint.decode.bytes
+  var type1 = tag1 & TAG_MASK
+  var type2 = tag2 & TAG_MASK
+
+  //allow comparison of number types. **javascriptism**
+  //maybe it's better to just have one number type? how can I make a varint double?
+  if(type1 === INT && type2 === DOUBLE)
+    return buffer1.readIntLE(start1+len1) - buffer2.readDoubleLE(start2+len2)
+
+  if(type1 === DOUBLE && type1 === INT)
+    return buffer1.readDoubleLE(start1+len1) - buffer2.readInt32LE(start2+len2)
+
+
+  if(type1 !== type2)
+    return type1 - type2
+  //if they are the same type, compare encoded value.
+  //TODO: compare by type semantics...
+  if(type1 === DOUBLE)
+    return buffer1.readDoubleLE(start1+len1) - buffer2.readDoubleLE(start2+len2)
+  if(type1 === INT)
+    return buffer1.readInt32LE(start1+len1) - buffer2.readInt32LE(start2+len2)
+
+  //except for strings, sort shorter values first
+  if(type1 !== STRING) {
+    var result = type1 - type2
+    if(result) return result
+  }
+  return buffer1.compare(buffer2,
+    start2+len2, start2+len2+(tag2 >> TAG_SIZE),
+    start1+len1, start1+len1 + (tag1 >> TAG_SIZE)
+  )
+}
+
+function iterate(buffer, start, iter) {
+  var tag = varint.decode(buffer, start)
+  var len = tag >> TAG_SIZE
+  var type = tag & TAG_MASK
+  if(type == OBJECT) {
+    for(var c = varint.decode.bytes; c < len;) {
+      var key_start = start+c
+      var key_tag = varint.decode(buffer, key_start)
+      c += varint.decode.bytes
+      c += (key_tag >> TAG_SIZE)
+      var value_tag = varint.decode(buffer, start+c)
+      var next_start = varint.decode.bytes + (value_tag >> TAG_SIZE)
+      iter(buffer, start+c, decode(buffer, key_start))
+      c += next_start
+    }
+  }
+  else if(type == ARRAY) {
+    var i = 0
+    for(var c = varint.decode.bytes; c < len;) {
+      iter(buffer, start+c, i)
+      var key_tag = varint.decode(buffer, start+c)
+      c += varint.decode.bytes + (key_tag >> TAG_SIZE)
+      var value_tag = varint.decode(buffer, start+c)
+      c += varint.decode.bytes + (value_tag >> TAG_SIZE)
+    }
+  }
+
+  return -1
+}
+
+function createCompareAt(paths) {
+  var getPaths = paths.map(createSeekPath)
+  return function (a, b) {
+    for(var i = 0; i < getPaths.length; i++) {
+      var _a = getPaths[i](a, 0)
+      var _b = getPaths[i](b, 0)
+      var r = compare(a, _a, b, _b)
+      if(r) return r
+    }
+    return 0
+  }
 }
 
 module.exports = {
@@ -238,7 +378,13 @@ module.exports = {
     return varint.decode(buffer, start)
   },
   seekKey: seekKey,
+  seekKey2: seekKey2,
+  createSeekPath: createSeekPath,
   seekPath: seekPath,
+  compareString: compareString,
+  compare: compare,
+  createCompareAt: createCompareAt,
+  iterate: iterate,
   types: {
     string: STRING,
     buffer: BUFFER,
@@ -250,9 +396,4 @@ module.exports = {
     reserved: RESERVED,
   }
 }
-
-
-
-
-
 
