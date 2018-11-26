@@ -87,19 +87,27 @@ in C with code written in javascript. If the javascript
 is within 10x the performance of the C then we are doing
 well! (and a C implementation would likely close that gap)
 
-The measurement is milliseconds to perform 10k operations.
+The measurement is run 10k operations, then divide by number of
+ms taken, higher number means more faster!
+
 Code is at the end of `./test.js`
 
 ```
-binary.encode 228
-JSON.stringify 38
-binary.decode 212
-JSON.parse 52
-JSON.parse(buffer) 66
-JSON.stringify(JSON.parse()) 96
-binary.seek(string) 44
-binary.seek(buffer) 10
+operation, ops/ms
+binary.encode 62.61740763932373
+JSON.stringify 325.7328990228013
+binary.decode 83.40283569641367
+JSON.parse 242.13075060532688
+JSON.parse(buffer) 198.4126984126984
+JSON.stringify(JSON.parse()) 127.55102040816327
+binary.seek(string) 500
+binary.seek2(encoded) 1219.5121951219512
+binary.seek(buffer) 1333.3333333333333
+binary.seekPath(encoded) 558.659217877095
+binary.seekPath(compiled) 1265.8227848101267
+binary.compare() 1785.7142857142858
 ```
+
 As expected, `binary.encode` is much slower than `JSON.stringify`,
 but it's only 6 times worse.
 But the interesting comparison is `JSON.stringify(JSON.parse())`
@@ -218,13 +226,25 @@ see performance section for discussion on the performance
 of seek - if it's only needed to parse a couple of elements,
 it can be significantly faster than parsing.
 
-### seekPath (buffer, start, path, path_start) => pointer
+### seekPath (buffer, start, array_of_buffers) => pointer
 
 The same as `seekKey`, except for a recursive path.
-`path` should be an array of strings encoded with this format.
-`path_start` should a pointer to the encoded array in that buffer.
+`path` should be an array of node buffers, just holding the key values,
+not encoded as `bipf`.
+
+### createSeekPath(path) => seekPath(buffer, start)
+
+compiles a javascript function that does a seekPath.
+this is significantly faster than iterating over a javascript
+array and then looking for each thing, because it will get optimized
+by the js engine's jit compiler.
+
 
 ## License
 
 MIT
+
+
+
+
 
