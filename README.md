@@ -90,7 +90,7 @@ well! (and a C implementation would likely close that gap)
 The measurement is run 10k operations, then divide by number of
 ms taken, higher number means more faster!
 
-Code is at the end of `./test.js`
+benchmark code is in `./test/perf.js`
 
 ```
 operation, ops/ms
@@ -243,8 +243,5 @@ by the js engine's jit compiler.
 ## License
 
 MIT
-
-
-
 
 
