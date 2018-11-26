@@ -1,4 +1,4 @@
-var varint = require('varint')
+var varint = require('varint32')
 
 var STRING = 0    // 000
 var BUFFER = 1    // 001
@@ -15,6 +15,7 @@ var RESERVED = 7  // 111
 var TAG_SIZE = 3, TAG_MASK = 7
 
 var bytes = 0
+//sets buffer, and returns length
 var encoders = [
   function String (string, buffer, start) {
     return buffer.write(string, start)
@@ -48,8 +49,13 @@ var encoders = [
     return p - start
   },
   function Boolean (b, buffer, start) {
-    buffer[start] = +!!b
-    return b == null ? 0 : 1
+    if(b !== null)
+      buffer[start] = (
+        b === false ? 0
+      : b === true  ? 1
+      :               2 //undefined
+      )
+    return b === null ? 0 : 1
   }
 ]
 
@@ -138,8 +144,13 @@ var decoders = [
   },
   function boolnull (buffer, start, length) {
     if(length === 0) return null
-    if(buffer[start] > 1) throw new Error('invalid boolnull')
-    return buffer[start] === 1
+    if(buffer[start] > 2) throw new Error('invalid boolnull')
+    if(length > 1) throw new Error('invalid boolnull, length must = 1')
+    return (
+      buffer[start] === 0 ? false
+    : buffer[start] === 1 ? true
+    :                       undefined
+    )
   }
 ]
 
@@ -156,8 +167,8 @@ function getType (value) {
     return ARRAY
   else if(value && 'object' === typeof value)
     return OBJECT
-  else if('boolean' === typeof value || null === value)
-    return BOOLNULL
+  else if('boolean' === typeof value || null == value)
+    return BOOLNULL //boolean, null, undefined
 }
 
 function encodingLength (value) {
@@ -167,10 +178,14 @@ function encodingLength (value) {
 }
 
 function encode (value, buffer, start) {
+  start = start | 0
   var type = getType(value)
+  if('function' !== typeof encodingLengthers[type])
+    throw new Error('unknown type:'+type+', '+JSON.stringify(value))
   var len = encodingLengthers[type](value)
   if(!buffer)
-    throw new Error('buffer must be provided')
+    buffer = Buffer.allocUnsafe(len)
+    //throw new Error('buffer must be provided')
   if(type === 7) throw new Error('reserved type')
   varint.encode(len << TAG_SIZE | type, buffer, start)
   var bytes = varint.encode.bytes
@@ -283,7 +298,15 @@ function compareString (buffer, start, target) {
   ) || target.length - len
 }
 
+function isNull(tag) {
+  return tag === 6
+}
+function isUndefined(tag, firstByte) {
+  return tag === 0xE && firstByte === 2
+}
+
 function compare (buffer1, start1, buffer2, start2) {
+
   //handle null pointers...
 //  console.log(start1, start2)
   if(start1 === -1 || start2 === -1)
@@ -295,6 +318,19 @@ function compare (buffer1, start1, buffer2, start2) {
   var len2 = varint.decode.bytes
   var type1 = tag1 & TAG_MASK
   var type2 = tag2 & TAG_MASK
+
+  //null, lowest value
+  if(isNull(tag1))
+    return isNull(tag2) ? 0 : -1
+  else if(isNull(tag2))
+    return 1
+
+  //undefined, highest value
+  if(isUndefined(tag1, buffer1[start1+1]))
+    return isUndefined(tag2, buffer2[start2+1]) ? 0 : 1
+  else if(isUndefined(tag2, buffer2[start2+1]))
+    return -1
+
 
   //allow comparison of number types. **javascriptism**
   //maybe it's better to just have one number type? how can I make a varint double?
