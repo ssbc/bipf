@@ -35,4 +35,17 @@ tape('sorted', function (t) {
   t.end()
 })
 
+tape('sort with null undefined', function (t) {
+  var values = [
+    null, undefined, 0, -1, 1, 'hello',
+    Buffer.from('abc'), [], {}, 0.23, true, false
+  ]
 
+  var encoded = values.map(encode)
+  encoded.sort(function (a, b) {
+    return bipf.compare(a, 0, b, 0)
+  })
+  console.log(encoded)
+  //console.log(encoded.map(function (b) { return bipf.decode(b, 0) }))
+  t.end()
+})
