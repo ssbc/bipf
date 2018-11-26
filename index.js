@@ -1,4 +1,4 @@
-var varint = require('varint32')
+var varint = require('varint')
 
 var STRING = 0    // 000
 var BUFFER = 1    // 001
