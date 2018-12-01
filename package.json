@@ -1,7 +1,7 @@
 {
   "name": "bipf",
   "description": "binary in-place format",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "homepage": "https://github.com/dominictarr/binary",
   "repository": {
     "type": "git",
