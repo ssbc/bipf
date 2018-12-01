@@ -335,7 +335,7 @@ function compare (buffer1, start1, buffer2, start2) {
   //allow comparison of number types. **javascriptism**
   //maybe it's better to just have one number type? how can I make a varint double?
   if(type1 === INT && type2 === DOUBLE)
-    return buffer1.readIntLE(start1+len1) - buffer2.readDoubleLE(start2+len2)
+    return buffer1.readIntLE32(start1+len1) - buffer2.readDoubleLE(start2+len2)
 
   if(type1 === DOUBLE && type1 === INT)
     return buffer1.readDoubleLE(start1+len1) - buffer2.readInt32LE(start2+len2)
