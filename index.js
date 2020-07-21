@@ -3,11 +3,11 @@ var varint = require('varint')
 var STRING = 0    // 000
 var BUFFER = 1    // 001
 
-var INT = 2       // 101 //32bit int
-var DOUBLE = 3    // 010 //use next 8 bytes to encode 64bit float
+var INT = 2       // 010 //32bit int
+var DOUBLE = 3    // 011 //use next 8 bytes to encode 64bit float
 
-var ARRAY = 4     // 011
-var OBJECT = 5    // 100
+var ARRAY = 4     // 100
+var OBJECT = 5    // 101
 
 var BOOLNULL = 6  // 110 //and use the rest of the byte as true/false/null
 var RESERVED = 7  // 111
@@ -89,70 +89,67 @@ var encodingLengthers = [
   }
 ]
 
-var decoders = [
-  function string (buffer, start, length) {
-    return buffer.toString('utf8', start, start+length)
-  },
-  function buffer (buffer, start, length) {
-    return buffer.slice(start, start+length)
-  },
-  function integer (buffer, start, length) {
-    return buffer.readInt32LE(start) //TODO: encode in minimum bytes
-  },
-  function double (buffer, start, length) {
-    return buffer.readDoubleLE(start) //TODO: encode in minimum bytes
-  },
-  function array (buffer, start, length) {
-    var a = [], i = 0
-    for(var c = 0; c < length;) {
-      var tag = varint.decode(buffer, start+c)
-      var type = tag & TAG_MASK
-      if(type === 7) throw new Error('reserved type')
-      var len = tag >> TAG_SIZE
-      c += varint.decode.bytes
-      var value = decoders[type](buffer, start+c, len)
-      a.push(value)
-      c += len
-    }
-    return a
-  },
-  function object (buffer, start, length) {
-    var o = {}
-    for(var c = 0; c < length;) {
-      var tag = varint.decode(buffer, start+c)
-      var type = tag & TAG_MASK
-      var len = tag >> TAG_SIZE
-      c += varint.decode.bytes
-      //TODO: positive integers keys are always in order!
-      //floats or negative numbers encoded as strings. or may not be keys?
-      if(type === 7) throw new Error('reserved type:key')
-      var key = decoders[type](buffer, start+c, len)
-      c += len
-
-      var tag2 = varint.decode(buffer, start+c)
-      var type2 = tag2 & TAG_MASK
-      if(type2 === 7) throw new Error('reserved type:value')
-      var len2 = tag2 >> TAG_SIZE
-      c += varint.decode.bytes
-      var value = decoders[type2](buffer, start+c, len2)
-
-      c+= len2
-      o[key] = value
-    }
-    return o
-
-  },
-  function boolnull (buffer, start, length) {
-    if(length === 0) return null
-    if(buffer[start] > 2) throw new Error('invalid boolnull')
-    if(length > 1) throw new Error('invalid boolnull, length must = 1')
-    return (
-      buffer[start] === 0 ? false
-    : buffer[start] === 1 ? true
-    :                       undefined
-    )
+function decode_string (buffer, start, length) {
+  return buffer.toString('utf8', start, start+length)
+}
+function decode_buffer (buffer, start, length) {
+  return buffer.slice(start, start+length)
+}
+function decode_integer (buffer, start, length) {
+  return buffer.readInt32LE(start) //TODO: encode in minimum bytes
+}
+function decode_double (buffer, start, length) {
+  return buffer.readDoubleLE(start) //TODO: encode in minimum bytes
+}
+function decode_array (buffer, start, length) {
+  var a = [], i = 0
+  for(var c = 0; c < length;) {
+    var tag = varint.decode(buffer, start+c)
+    var type = tag & TAG_MASK
+    if(type === 7) throw new Error('reserved type')
+    var len = tag >> TAG_SIZE
+    c += varint.decode.bytes
+    var value = decode_type(type, buffer, start+c, len)
+    a.push(value)
+    c += len
   }
-]
+  return a
+}
+function decode_object (buffer, start, length) {
+  var o = {}
+  for(var c = 0; c < length;) {
+    var tag = varint.decode(buffer, start+c)
+    var type = tag & TAG_MASK
+    var len = tag >> TAG_SIZE
+    c += varint.decode.bytes
+    //TODO: positive integers keys are always in order!
+    //floats or negative numbers encoded as strings. or may not be keys?
+    if(type === 7) throw new Error('reserved type:key')
+    var key = decode_type(type, buffer, start+c, len)
+    c += len
+
+    var tag2 = varint.decode(buffer, start+c)
+    var type2 = tag2 & TAG_MASK
+    if(type2 === 7) throw new Error('reserved type:value')
+    var len2 = tag2 >> TAG_SIZE
+    c += varint.decode.bytes
+    var value = decode_type(type2, buffer, start+c, len2)
+    c+= len2
+    o[key] = value
+  }
+  return o
+
+}
+function decode_boolnull (buffer, start, length) {
+  if(length === 0) return null
+  if(buffer[start] > 2) throw new Error('invalid boolnull')
+  if(length > 1) throw new Error('invalid boolnull, length must = 1')
+  return (
+    buffer[start] === 0 ? false
+  : buffer[start] === 1 ? true
+  :                       undefined
+  )
+}
 
 function getType (value) {
   if('string' === typeof value || value instanceof Date)
@@ -177,19 +174,54 @@ function encodingLength (value) {
   return varint.encodingLength(len << TAG_SIZE) + len
 }
 
-function encode (value, buffer, start) {
+function slice(buffer, start) {
+  var tag_value = varint.decode(buffer, start)
+  var length = tag_value >> TAG_SIZE
+  return buffer.slice(start+varint.decode.bytes, start+varint.decode.bytes + length)
+}
+
+function getEncodedLength(buffer, start) {
+  return varint.decode(buffer, start) >> TAG_SIZE
+}
+
+function getEncodedType(buffer, start) {
+  return varint.decode(buffer, start) & TAG_MASK
+}
+
+function encode (value, buffer, start, _len) {
   start = start | 0
   var type = getType(value)
   if('function' !== typeof encodingLengthers[type])
     throw new Error('unknown type:'+type+', '+JSON.stringify(value))
-  var len = encodingLengthers[type](value)
-  if(!buffer)
-    buffer = Buffer.allocUnsafe(len)
+  var len = _len === undefined ? encodingLengthers[type](value) : _len
+//  if(!buffer)
+//    buffer = Buffer.allocUnsafe(len)
     //throw new Error('buffer must be provided')
   if(type === 7) throw new Error('reserved type')
   varint.encode(len << TAG_SIZE | type, buffer, start)
   var bytes = varint.encode.bytes
   return encoders[type](value, buffer, start+bytes) + bytes
+}
+
+function allocAndEncode(value) {
+  var len = encodingLength(value)
+  var buffer = Buffer.allocUnsafe(len)
+  encode(value, buffer, 0)
+  return buffer
+}
+
+function decode_type(type, buffer, start, len) {
+  return (type < ARRAY) ? (
+    type === STRING   ? decode_string   (buffer, start, len)
+  : type === BUFFER   ? decode_buffer   (buffer, start, len)
+  : type === INT      ? decode_integer  (buffer, start, len)
+  :                     decode_double   (buffer, start, len)
+  ) : (
+    type === ARRAY    ? decode_array    (buffer, start, len)
+  : type === OBJECT   ? decode_object   (buffer, start, len)
+  : type === BOOLNULL ? decode_boolnull (buffer, start, len)
+  :                     decode_reserved (buffer, start, len)
+  )
 }
 
 function decode (buffer, start) {
@@ -199,7 +231,7 @@ function decode (buffer, start) {
   var len = tag >> TAG_SIZE
   var bytes = varint.decode.bytes
   start += bytes
-  var value = decoders[type](buffer, start, len)
+  var value = decode_type(type, buffer, start, len)
   decode.bytes = len + bytes
   return value
 }
@@ -371,9 +403,10 @@ function iterate(buffer, start, iter) {
       var key_tag = varint.decode(buffer, key_start)
       c += varint.decode.bytes
       c += (key_tag >> TAG_SIZE)
-      var value_tag = varint.decode(buffer, start+c)
+      var value_start = start+c
+      var value_tag = varint.decode(buffer, value_start)
       var next_start = varint.decode.bytes + (value_tag >> TAG_SIZE)
-      iter(buffer, start+c, decode(buffer, key_start))
+      iter(buffer, value_start, key_start)
       c += next_start
     }
   }
@@ -407,12 +440,13 @@ function createCompareAt(paths) {
 module.exports = {
   encode: encode,
   decode: decode,
+  allocAndEncode: allocAndEncode,
   encodingLength: encodingLength,
   buffer: true,
+  slice: slice,
   getValueType: getType,
-  getEncodedType: function (buffer, start) {
-    return varint.decode(buffer, start)
-  },
+  getEncodedLength: getEncodedLength,
+  getEncodedType: getEncodedType,
   seekKey: seekKey,
   seekKey2: seekKey2,
   createSeekPath: createSeekPath,
@@ -432,4 +466,3 @@ module.exports = {
     reserved: RESERVED,
   }
 }
-
