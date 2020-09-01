@@ -53,12 +53,23 @@ function read (key, b) {
 }
 */
 
+let fixtures = []
+
 function test (value) {
   tape('encode/decode:'+JSON.stringify(value), function (t) {
+    let json_value = JSON.stringify(value)
+    const json_buf = Buffer.from(json_value, 'utf8')
+    let f = {
+      "name": json_value,
+      "json": json_buf.toString('hex')
+    }
+
     console.log('test:', value)
     var b = Buffer.alloc(binary.encodingLength(value))
     var l = binary.encode(value, b, 0)
-    console.log('encoded:', b.slice(0, l))
+    var enc = b.slice(0, l)
+    console.log('encoded:', enc)
+    f.binary = enc.toString('hex')
     //''+jsonString to get 'undefined' string.
     var jl = Buffer.byteLength(''+JSON.stringify(value))
     console.log('length:', l, 'json-length:', jl)
@@ -69,7 +80,7 @@ function test (value) {
     console.log('---')
     t.deepEqual(binary.decode(b, 0), value)
     t.deepEqual(binary.decode(b.slice(0, l), 0), value)
-
+    fixtures.push(f)
     t.end()
   })
 }
@@ -81,9 +92,9 @@ test(-1)
 test(true)
 test(false)
 test(null)
-test(undefined) //added undefined for compatibility with charwise
+// test(undefined) //added undefined for compatibility with charwise
 test('')
-test(Buffer.alloc(0))
+// test(Buffer.alloc(0))
 test([])
 test({})
 test([1,2,3,4,5,6,7,8,9])
@@ -92,6 +103,17 @@ test({foo: true})
 test([-1, {foo: true}, Buffer.from('deadbeef', 'hex')])
 test(pkg)
 test({1: true})
+
+
+// generate the fixtures.json
+/* there must be a better way to know when the above things passed..
+setTimeout(() => {
+  var fix_data = JSON.stringify(fixtures)
+  require('fs').writeFileSync('fixtures_test.json', fix_data)
+  console.warn('fixtures generated')
+}, 3000)
+return
+*/
 
 tape('seekPath', function (t) {
   var path = ['dependencies', 'varint']

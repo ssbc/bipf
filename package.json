@@ -15,7 +15,7 @@
     "tape": "^4.9.0"
   },
   "scripts": {
-    "test": "node test/index.js && node test/compare.js"
+    "test": "node test/index.js && node test/compare.js && node test/fixtures.js"
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "license": "MIT"
