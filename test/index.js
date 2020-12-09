@@ -46,7 +46,7 @@ function read (key, b) {
       var l2 = b.readUInt16LE(c + l)>>3
       if(_key == key) //return b.toString('utf8', c, c+l2)
         return c+l //read_value(c-2, b)
-//      c += 
+//      c +=
       c+=l+2+l2+2
     }
   }
@@ -114,7 +114,7 @@ function traverse (buffer, start) {
 
 }
 
-tape('iterate', function (t) {
+tape('iterate object', function (t) {
   var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
   binary.encode(pkg, pkg_buf, 0)
 
@@ -127,5 +127,22 @@ tape('iterate', function (t) {
 
 })
 
+tape('iterate array', function (t) {
+  var myarr = ['cat', 'dog', 'bird', 'elephant'];
+  var myarr_buf = Buffer.alloc(binary.encodingLength(myarr));
+  binary.encode(myarr, myarr_buf, 0);
 
-
+  var expectedResults = [
+    [0, 2, 'cat'],
+    [1, 6, 'dog'],
+    [2, 10, 'bird'],
+    [3, 15, 'elephant'],
+  ];
+  binary.iterate(myarr_buf, 0, function (buffer, pointer, key) {
+    var expected = expectedResults.shift();
+    t.equal(key, expected[0], '' + expected[0]);
+    t.equal(pointer, expected[1], '' + expected[1]);
+    t.equal(binary.decode(buffer, pointer), expected[2], '' + expected[2]);
+  });
+  t.end();
+});

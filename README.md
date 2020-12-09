@@ -192,6 +192,13 @@ get the `type` tag at `start`
 
 an object containing the type tags.
 
+### iterate (buffer, start, fn) => void
+
+If the field at `start` is an object or array, then `iterate` will call the `fn`
+with arguments `fn(buffer, pointer, key)` for each subfield. If the field at
+`start` is not an array or object, this returns `-1`. You can stop/abort the
+iteration by making `fn` return any truthy value.
+
 ### seekKey (buffer, start, target) => pointer
 
 seek for a key `target` within an object. If
