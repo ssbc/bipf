@@ -405,7 +405,7 @@ function iterate(buffer, start, iter) {
       var value_start = start+c
       var value_tag = varint.decode(buffer, value_start)
       var next_start = varint.decode.bytes + (value_tag >> TAG_SIZE)
-      iter(buffer, value_start, key_start)
+      if (iter(buffer, value_start, key_start)) return start
       c += next_start
     }
     return start
@@ -413,7 +413,7 @@ function iterate(buffer, start, iter) {
   else if(type === ARRAY) {
     var i = 0
     for(var c = varint.decode.bytes; c < len;) {
-      if (iter(buffer, start+c, i++)) return
+      if (iter(buffer, start+c, i++)) return start
       var value_tag = varint.decode(buffer, start+c)
       c += varint.decode.bytes + (value_tag >> TAG_SIZE)
     }
