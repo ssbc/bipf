@@ -272,7 +272,6 @@ function seekKey2 (buffer, start, target, t_start) {
   if(type != OBJECT) return -1
   for(; c + t_length < len;) {
     var b_tag = varint.decode(buffer, start+c)
-    
     if(b_tag === t_tag && buffer.compare(target, t_start, t_length, start+c, start+c+t_length) === 0)
       return start+c+(b_tag>>TAG_SIZE)+varint.decode.bytes
     else {
@@ -397,7 +396,7 @@ function iterate(buffer, start, iter) {
   var tag = varint.decode(buffer, start)
   var len = tag >> TAG_SIZE
   var type = tag & TAG_MASK
-  if(type == OBJECT) {
+  if(type === OBJECT) {
     for(var c = varint.decode.bytes; c < len;) {
       var key_start = start+c
       var key_tag = varint.decode(buffer, key_start)
@@ -409,19 +408,17 @@ function iterate(buffer, start, iter) {
       iter(buffer, value_start, key_start)
       c += next_start
     }
+    return start
   }
-  else if(type == ARRAY) {
+  else if(type === ARRAY) {
     var i = 0
     for(var c = varint.decode.bytes; c < len;) {
-      iter(buffer, start+c, i)
-      var key_tag = varint.decode(buffer, start+c)
-      c += varint.decode.bytes + (key_tag >> TAG_SIZE)
+      if (iter(buffer, start+c, i++)) return
       var value_tag = varint.decode(buffer, start+c)
       c += varint.decode.bytes + (value_tag >> TAG_SIZE)
     }
-  }
-
-  return -1
+    return start
+  } else return -1
 }
 
 function createCompareAt(paths) {
