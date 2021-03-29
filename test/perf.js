@@ -1,6 +1,59 @@
 var binary = require('../')
 var tape = require('tape')
-var pkg = require('../package.json')
+var faker = require('faker');
+
+function getNonNested() {
+  switch (faker.datatype.number(7)) {
+    case 0:
+      return Buffer.from(faker.random.words(faker.datatype.number(5) + 1))
+    case 1:
+      return faker.datatype.number(300)
+    case 2:
+      return faker.datatype.float()
+    case 3:
+      return faker.datatype.boolean()
+    case 4:
+      return undefined
+    case 5:
+      return null
+    case 6:
+    default:
+      return faker.random.words(faker.datatype.number(5) + 1)
+  }
+}
+
+function getRandomArray(level) {
+  return new Array(faker.datatype.number(10) + 1).fill(1).map(
+    function () {
+      return buildStructure(level + 1)
+    }
+  )
+}
+
+function buildStructure(level) {
+  var selection
+  if (level < 1) selection = faker.datatype.number(1)
+  else if (level > 3) selection = 2
+  else selection = faker.datatype.number(2)
+  switch (selection) {
+    case 0:
+      return getRandomArray(level)
+        .reduce(function(agg, e) {
+          agg[faker.random.word()] = e
+          return agg
+        }, {})
+    case 1:
+      return getRandomArray(level)
+    default:
+      return getNonNested()
+  }
+}
+
+faker.seed(348230432)
+console.log('Generating JSON structure...')
+const genDate = new Date();
+var pkg = buildStructure(0)
+console.log('Structure generated in ' + (new Date() - genDate) + 'ms')
 
 function encode (string) {
   var b = Buffer.alloc(binary.encodingLength(string))
@@ -13,7 +66,7 @@ var b = Buffer.alloc(binary.encodingLength(value))
 var start, json
 var json = JSON.stringify(value)
 var buffer = Buffer.from(JSON.stringify(value))
-var N = 100000
+var N = 10000
 
 console.log('operation, ops/ms')
 start = Date.now()
