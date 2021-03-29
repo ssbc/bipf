@@ -12,7 +12,7 @@ var value = pkg
 var b = Buffer.alloc(binary.encodingLength(value))
 var start, json
 var json = JSON.stringify(value)
-var buffer = new Buffer(JSON.stringify(value))
+var buffer = Buffer.from(JSON.stringify(value))
 var N = 100000
 
 console.log('operation, ops/ms')
@@ -71,8 +71,8 @@ console.log('binary.seek2(encoded)', N/(Date.now() - start))
 // ---
 
 start = Date.now()
-var dependencies = new Buffer('dependencies')
-var varint = new Buffer('varint')
+var dependencies = Buffer.from('dependencies')
+var varint = Buffer.from('varint')
 for(var i = 0; i < N; i++) {
   var c, d
   binary.decode(b, d=binary.seekKey(b, c = binary.seekKey(b, 0, dependencies), varint))
