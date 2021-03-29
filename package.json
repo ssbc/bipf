@@ -2,10 +2,10 @@
   "name": "bipf",
   "description": "binary in-place format",
   "version": "1.4.0",
-  "homepage": "https://github.com/dominictarr/binary",
+  "homepage": "https://github.com/ssbc/bipf",
   "repository": {
     "type": "git",
-    "url": "git://github.com/dominictarr/binary.git"
+    "url": "git://github.com/ssbc/bipf.git"
   },
   "dependencies": {
     "varint": "^5.0.0"
