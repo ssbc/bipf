@@ -89,7 +89,7 @@ test({})
 test([1,2,3,4,5,6,7,8,9])
 test('hello')
 test({foo: true})
-test([-1, {foo: true}, new Buffer('deadbeef', 'hex')])
+test([-1, {foo: true}, Buffer.from('deadbeef', 'hex')])
 test(pkg)
 
 
