@@ -102,7 +102,7 @@ function decode_double (buffer, start, length) {
   return buffer.readDoubleLE(start) //TODO: encode in minimum bytes
 }
 function decode_array (buffer, start, length) {
-  var a = [], i = 0
+  var a = []
   for(var c = 0; c < length;) {
     var tag = varint.decode(buffer, start+c)
     var type = tag & TAG_MASK
@@ -119,13 +119,11 @@ function decode_object (buffer, start, length) {
   var o = {}
   for(var c = 0; c < length;) {
     var tag = varint.decode(buffer, start+c)
-    var type = tag & TAG_MASK
+    // JavaScript only allows string-valued and Symbol keys for objects
+    if(tag & TAG_MASK) throw new Error('required type:string')
     var len = tag >> TAG_SIZE
     c += varint.decode.bytes
-    //TODO: positive integers keys are always in order!
-    //floats or negative numbers encoded as strings. or may not be keys?
-    if(type === 7) throw new Error('reserved type:key')
-    var key = decode_type(type, buffer, start+c, len)
+    var key = decode_string(buffer, start+c, len)
     c += len
 
     var tag2 = varint.decode(buffer, start+c)
