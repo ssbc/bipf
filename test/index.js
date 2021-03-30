@@ -91,7 +91,7 @@ test('hello')
 test({foo: true})
 test([-1, {foo: true}, Buffer.from('deadbeef', 'hex')])
 test(pkg)
-
+test({1: true})
 
 tape('seekPath', function (t) {
   var path = ['dependencies', 'varint']
