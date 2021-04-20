@@ -262,12 +262,12 @@ function seekKey (buffer, start, target) {
 
 function seekKey2 (buffer, start, target, t_start) {
   var tag = varint.decode(buffer, start)
+  var type = tag & TAG_MASK
+  if(type != OBJECT) return -1
   var c = varint.decode.bytes
   var len = tag >> TAG_SIZE
-  var type = tag & TAG_MASK
   var t_tag = varint.decode(target, t_start)
   var t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
-  if(type != OBJECT) return -1
   for(; c + t_length < len;) {
     var b_tag = varint.decode(buffer, start+c)
     if(b_tag === t_tag && buffer.compare(target, t_start, t_length, start+c, start+c+t_length) === 0)
