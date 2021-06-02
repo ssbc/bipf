@@ -1,0 +1,21 @@
+{
+  "key": "%U/mF7uBRQjhDz/OZ+xx0QqMn5ilFxMVvm6xvHcK/SS0=.sha256",
+  "value": {
+    "previous": "%qCTTfSeVscR/r1DzLLC4u8NgbUD5SE8kVn6VubT05VU=.sha256",
+    "author": "@6CAxOI3f+LUOVrbAl0IemqiS7ATpQvr9Mdw9LC4+Uv0=.ed25519",
+    "sequence": 4707,
+    "timestamp": 1536605553877,
+    "hash": "sha256",
+    "content": {
+      "type": "post",
+      "root": "%0QaqCbt73dG10K+SxbRzIA/NA4REp1m35KEwus/1KMY=.sha256",
+      "branch": [
+        "%18gNqsmVzNTJS55ZG+sLYHZDKF0fI88i5PfV+/YCk8Y=.sha256",
+        "%K1QJ0zI3DdKzvMPJygklPGkV0kqth2JtH+c9NNx0bXo=.sha256"
+      ],
+      "text": "Right, so about tor. Right not patchwork uses the current version of scuttlebot, where one *can* force it to only use tor, but is very hacky and not recommended unless you run in a developer mode. In the next release (out soon!) incoming and outgoing connections are completely configurable, so it should be easy to say only connect to outside world using tor. I'm tempted to add this as an option to at least patchbay, once we get the new release out."
+    },
+    "signature": "Rkk5TrYo1JQbImxgRQSBPp+iCeJRVhR9BK8Kt/cPHvqaP4a3VU/aWv95Ppv/OTi2mZBtJKdoLB+AKPyNQwPZCg==.sig.ed25519"
+  },
+  "timestamp": 1572383851907.001
+}

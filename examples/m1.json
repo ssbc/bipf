@@ -1,0 +1,17 @@
+{
+  "key": "%HZVnEzm0NgoSVfG0Hx4gMFbMMHhFvhJsG2zK/pijYII=.sha256",
+  "value": {
+    "previous": "%H3MlLmVPVgHU6rBSzautUBZibDttkI+cU4lAFUIM8Ag=.sha256",
+    "author": "@6CAxOI3f+LUOVrbAl0IemqiS7ATpQvr9Mdw9LC4+Uv0=.ed25519",
+    "sequence": 2,
+    "timestamp": 1456154934819,
+    "hash": "sha256",
+    "content": {
+      "type": "post",
+      "text": "Testing first mesage",
+      "channel": "testing"
+    },
+    "signature": "az18LEvCgji1zqpAF/JcTool+y69WhyLVesvWcrnyj5pFJymXKALZ7zUDRuxOcBGr+wU4v6zN/+b3tAYsz+zBg==.sig.ed25519"
+  },
+  "timestamp": 1572379947736
+}
