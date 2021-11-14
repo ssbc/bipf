@@ -1,6 +1,7 @@
-var binary = require('../')
-var tape = require('tape')
-var pkg = require('../package.json')
+const tape = require('tape')
+const bipf = require('../')
+const pkg = require('../package.json')
+
 /*
   json types:
 
@@ -20,101 +21,101 @@ var pkg = require('../package.json')
   >
 */
 
-function test(value) {
-  tape('encode/decode:' + JSON.stringify(value), function (t) {
-    console.log('test:', value)
-    var b = Buffer.alloc(binary.encodingLength(value))
-    var l = binary.encode(value, b, 0)
-    console.log('encoded:', b.slice(0, l))
+function testEncodeDecode(value) {
+  tape('encode & decode: ' + JSON.stringify(value), (t) => {
+    const buf = Buffer.alloc(bipf.encodingLength(value))
+    const len = bipf.encode(value, buf, 0)
+    console.log('encoded:', buf.slice(0, len))
     //''+jsonString to get 'undefined' string.
-    var jl = Buffer.byteLength('' + JSON.stringify(value))
-    console.log('length:', l, 'json-length:', jl)
-    if (l > jl)
+    const jsonLen = Buffer.byteLength('' + JSON.stringify(value))
+    console.log('length:', len, 'JSON-length:', jsonLen)
+    if (len > jsonLen)
       console.log('WARNING: binary encoding longer than json for:', value)
-    if (l === 1)
-      t.equal(
-        b[0] >> 3,
-        0,
-        'single byte encodings must have zero length in tag'
-      )
-    console.log('decoded:', binary.decode(b, 0))
-    console.log('---')
-    t.deepEqual(binary.decode(b, 0), value)
-    t.deepEqual(binary.decode(b.slice(0, l), 0), value)
+    if (len === 1) {
+      const rest = buf[0] >> 3
+      t.equal(rest, 0, 'single byte encodings must have zero length in tag')
+    }
+    t.deepEqual(bipf.decode(buf, 0), value)
+    t.deepEqual(bipf.decode(buf.slice(0, len), 0), value)
 
     t.end()
   })
 }
 
-test(100)
-test(0)
-test(1)
-test(-1)
-test(true)
-test(false)
-test(null)
-test(undefined) //added undefined for compatibility with charwise
-test('')
-test(Buffer.alloc(0))
-test([])
-test({})
-test([1, 2, 3, 4, 5, 6, 7, 8, 9])
-test('hello')
-test({ foo: true })
-test([-1, { foo: true }, Buffer.from('deadbeef', 'hex')])
-test(pkg)
-test({ 1: true })
+testEncodeDecode(100)
+testEncodeDecode(0)
+testEncodeDecode(1)
+testEncodeDecode(-1)
+testEncodeDecode(true)
+testEncodeDecode(false)
+testEncodeDecode(null)
+testEncodeDecode(undefined) // added undefined for compatibility with charwise
+testEncodeDecode('')
+testEncodeDecode(Buffer.alloc(0))
+testEncodeDecode([])
+testEncodeDecode({})
+testEncodeDecode([1, 2, 3, 4, 5, 6, 7, 8, 9])
+testEncodeDecode('hello')
+testEncodeDecode({ foo: true })
+testEncodeDecode([-1, { foo: true }, Buffer.from('deadbeef', 'hex')])
+testEncodeDecode(pkg)
+testEncodeDecode({ 1: true })
 
-tape('seekPath', function (t) {
-  var path = ['dependencies', 'varint']
-  var path_buf = Buffer.alloc(binary.encodingLength(path))
-  binary.encode(path, path_buf, 0)
+tape('seekPath', (t) => {
+  const path = ['dependencies', 'varint']
+  const pathBuf = Buffer.alloc(bipf.encodingLength(path))
+  bipf.encode(path, pathBuf, 0)
 
-  var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
-  binary.encode(pkg, pkg_buf, 0)
+  const pkgBuf = Buffer.alloc(bipf.encodingLength(pkg))
+  bipf.encode(pkg, pkgBuf, 0)
 
   t.equal(
-    binary.decode(pkg_buf, binary.seekPath(pkg_buf, 0, path_buf, 0)),
+    bipf.decode(pkgBuf, bipf.seekPath(pkgBuf, 0, pathBuf, 0)),
     pkg.dependencies.varint
   )
 
   t.end()
 })
 
-function traverse(buffer, start) {}
+tape('iterate() over an encoded object', (t) => {
+  const pkgBuf = Buffer.alloc(bipf.encodingLength(pkg))
+  bipf.encode(pkg, pkgBuf, 0)
 
-tape('iterate object', function (t) {
-  var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
-  binary.encode(pkg, pkg_buf, 0)
+  const expectedResults = [
+    ['name', 'bipf'],
+    ['description', 'binary in-place format'],
+  ]
 
-  var s = ''
-  binary.iterate(pkg_buf, 0, function (buffer, pointer, key) {
-    var type = binary.getEncodedType(buffer, pointer)
-    console.log(
-      JSON.stringify(key),
-      pointer,
-      JSON.stringify(binary.decode(buffer, pointer))
-    )
+  bipf.iterate(pkgBuf, 0, (buffer, valuePointer, keyPointer) => {
+    const value = bipf.decode(buffer, valuePointer)
+    const key = bipf.decode(buffer, keyPointer)
+    const [expectedKey, expectedValue] = expectedResults.shift()
+    t.deepEquals(key, expectedKey, 'iter key is correct')
+    t.deepEquals(value, expectedValue, 'iter value is correct')
+    if (expectedResults.length === 0) return true
   })
+
   t.end()
 })
 
-tape('iterate array', function (t) {
-  var myarr = ['cat', 'dog', 'bird', 'elephant']
-  var myarr_buf = Buffer.alloc(binary.encodingLength(myarr))
-  binary.encode(myarr, myarr_buf, 0)
+tape('iterate() over an encoded array', (t) => {
+  const arr = ['cat', 'dog', 'bird', 'elephant']
+  const arrBuf = Buffer.alloc(bipf.encodingLength(arr))
+  bipf.encode(arr, arrBuf, 0)
 
-  var expectedResults = [
+  const expectedResults = [
     [0, 2, 'cat'],
     [1, 6, 'dog'],
     [2, 10, 'bird'],
     [3, 15, 'elephant'],
   ]
-  binary.iterate(myarr_buf, 0, function (buffer, pointer, key) {
-    var expected = expectedResults.shift()
-    t.equal(key, expected[0], '' + expected[0])
-    t.equal(pointer, expected[1], '' + expected[1])
-    t.equal(binary.decode(buffer, pointer), expected[2], '' + expected[2])
+
+  bipf.iterate(arrBuf, 0, (buffer, pointer, idx) => {
+    const [expectedIdx, expectedPointer, expectedVal] = expectedResults.shift()
+    t.equal(idx, expectedIdx, 'iter index is correct')
+    t.equal(pointer, expectedPointer, 'iter pointer is correct')
+    t.equal(bipf.decode(buffer, pointer), expectedVal, 'iter value is correct')
   })
+
   t.end()
 })
