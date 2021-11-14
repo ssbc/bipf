@@ -12,14 +12,24 @@
   },
   "devDependencies": {
     "faker": "^5.5.1",
+    "husky": "^4.3.8",
     "nyc": "^15.1.0",
+    "prettier": "^2.1.2",
+    "pretty-quick": "^3.1.0",
     "tap-spec": "^5.0.0",
     "tape": "^5.3.1"
   },
   "scripts": {
     "test": "tape test/index.js | tap-spec && tape test/compare.js | tap-spec",
     "coverage": "nyc --reporter=lcov npm test",
+    "format-code": "prettier --write \"*.js\" \"test/*.js\"",
+    "format-code-staged": "pretty-quick --staged --pattern \"*.js\" --pattern \"test/*.js\"",
     "benchmark": "node test/perf.js"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run format-code-staged"
+    }
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
   "contributors": [

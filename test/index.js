@@ -20,51 +20,23 @@ var pkg = require('../package.json')
   >
 */
 
-/*
-function read_value (pointer, b) {
-  var l = b.readUInt16LE(pointer)
-  var type = l & 7
-  var length = l>>3
-  pointer += 2
-  return b.toString('utf8', pointer, pointer+length)
-}
-
-function read (key, b) {
-  var c = 0
-  var l = Buffer.byteLength(key)
-  while(c < b.length) {
-    var len = b.readUInt16LE(c)>>3
-    c += 2
-    if(len != l) {
-      c += len //skip this item, it's not the key we want.
-      var len_skip = b.readUInt16LE(c)>>3
-      c += len_skip + 2
-    }
-    else {
-      var _key = b.toString('utf8', c, c+l)
-//      c+=l
-      var l2 = b.readUInt16LE(c + l)>>3
-      if(_key == key) //return b.toString('utf8', c, c+l2)
-        return c+l //read_value(c-2, b)
-//      c +=
-      c+=l+2+l2+2
-    }
-  }
-}
-*/
-
-function test (value) {
-  tape('encode/decode:'+JSON.stringify(value), function (t) {
+function test(value) {
+  tape('encode/decode:' + JSON.stringify(value), function (t) {
     console.log('test:', value)
     var b = Buffer.alloc(binary.encodingLength(value))
     var l = binary.encode(value, b, 0)
     console.log('encoded:', b.slice(0, l))
     //''+jsonString to get 'undefined' string.
-    var jl = Buffer.byteLength(''+JSON.stringify(value))
+    var jl = Buffer.byteLength('' + JSON.stringify(value))
     console.log('length:', l, 'json-length:', jl)
-    if(l > jl) console.log("WARNING: binary encoding longer than json for:", value)
-    if(l == 1)
-      t.equal(b[0]>>3, 0, 'single byte encodings must have zero length in tag')
+    if (l > jl)
+      console.log('WARNING: binary encoding longer than json for:', value)
+    if (l === 1)
+      t.equal(
+        b[0] >> 3,
+        0,
+        'single byte encodings must have zero length in tag'
+      )
     console.log('decoded:', binary.decode(b, 0))
     console.log('---')
     t.deepEqual(binary.decode(b, 0), value)
@@ -86,18 +58,17 @@ test('')
 test(Buffer.alloc(0))
 test([])
 test({})
-test([1,2,3,4,5,6,7,8,9])
+test([1, 2, 3, 4, 5, 6, 7, 8, 9])
 test('hello')
-test({foo: true})
-test([-1, {foo: true}, Buffer.from('deadbeef', 'hex')])
+test({ foo: true })
+test([-1, { foo: true }, Buffer.from('deadbeef', 'hex')])
 test(pkg)
-test({1: true})
+test({ 1: true })
 
 tape('seekPath', function (t) {
   var path = ['dependencies', 'varint']
   var path_buf = Buffer.alloc(binary.encodingLength(path))
   binary.encode(path, path_buf, 0)
-
 
   var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
   binary.encode(pkg, pkg_buf, 0)
@@ -110,9 +81,7 @@ tape('seekPath', function (t) {
   t.end()
 })
 
-function traverse (buffer, start) {
-
-}
+function traverse(buffer, start) {}
 
 tape('iterate object', function (t) {
   var pkg_buf = Buffer.alloc(binary.encodingLength(pkg))
@@ -120,29 +89,32 @@ tape('iterate object', function (t) {
 
   var s = ''
   binary.iterate(pkg_buf, 0, function (buffer, pointer, key) {
-    var type = binary.getEncodedType (buffer, pointer)
-    console.log(JSON.stringify(key), pointer, JSON.stringify(binary.decode(buffer, pointer)))
+    var type = binary.getEncodedType(buffer, pointer)
+    console.log(
+      JSON.stringify(key),
+      pointer,
+      JSON.stringify(binary.decode(buffer, pointer))
+    )
   })
   t.end()
-
 })
 
 tape('iterate array', function (t) {
-  var myarr = ['cat', 'dog', 'bird', 'elephant'];
-  var myarr_buf = Buffer.alloc(binary.encodingLength(myarr));
-  binary.encode(myarr, myarr_buf, 0);
+  var myarr = ['cat', 'dog', 'bird', 'elephant']
+  var myarr_buf = Buffer.alloc(binary.encodingLength(myarr))
+  binary.encode(myarr, myarr_buf, 0)
 
   var expectedResults = [
     [0, 2, 'cat'],
     [1, 6, 'dog'],
     [2, 10, 'bird'],
     [3, 15, 'elephant'],
-  ];
+  ]
   binary.iterate(myarr_buf, 0, function (buffer, pointer, key) {
-    var expected = expectedResults.shift();
-    t.equal(key, expected[0], '' + expected[0]);
-    t.equal(pointer, expected[1], '' + expected[1]);
-    t.equal(binary.decode(buffer, pointer), expected[2], '' + expected[2]);
-  });
-  t.end();
-});
+    var expected = expectedResults.shift()
+    t.equal(key, expected[0], '' + expected[0])
+    t.equal(pointer, expected[1], '' + expected[1])
+    t.equal(binary.decode(buffer, pointer), expected[2], '' + expected[2])
+  })
+  t.end()
+})

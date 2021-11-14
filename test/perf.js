@@ -1,6 +1,5 @@
 var binary = require('../')
-var tape = require('tape')
-var faker = require('faker');
+var faker = require('faker')
 
 function getNonNested() {
   switch (faker.datatype.number(7)) {
@@ -23,11 +22,9 @@ function getNonNested() {
 }
 
 function getRandomArray(level) {
-  return new Array(faker.datatype.number(10) + 1).fill(1).map(
-    function () {
-      return buildStructure(level + 1)
-    }
-  )
+  return new Array(faker.datatype.number(10) + 1).fill(1).map(function () {
+    return buildStructure(level + 1)
+  })
 }
 
 function buildStructure(level) {
@@ -37,11 +34,10 @@ function buildStructure(level) {
   else selection = faker.datatype.number(2)
   switch (selection) {
     case 0:
-      return getRandomArray(level)
-        .reduce(function(agg, e) {
-          agg[faker.random.word()] = e
-          return agg
-        }, {})
+      return getRandomArray(level).reduce(function (agg, e) {
+        agg[faker.random.word()] = e
+        return agg
+      }, {})
     case 1:
       return getRandomArray(level)
     default:
@@ -51,11 +47,11 @@ function buildStructure(level) {
 
 faker.seed(348230432)
 console.log('Generating JSON structure...')
-const genDate = new Date();
+const genDate = new Date()
 var pkg = buildStructure(0)
 console.log('Structure generated in ' + (new Date() - genDate) + 'ms')
 
-function encode (string) {
+function encode(string) {
   var b = Buffer.alloc(binary.encodingLength(string))
   binary.encode(string, b, 0)
   return b
@@ -70,76 +66,85 @@ var N = 10000
 
 console.log('operation, ops/ms')
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   //not an honest test
   b = Buffer.allocUnsafe(binary.encodingLength(value))
   binary.encode(value, b, 0)
 }
-console.log('binary.encode', N/(Date.now() - start))
+console.log('binary.encode', N / (Date.now() - start))
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   JSON.stringify(value)
 }
-console.log('JSON.stringify', N/(Date.now() - start))
+console.log('JSON.stringify', N / (Date.now() - start))
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   binary.decode(b, 0)
 }
-console.log('binary.decode', N/(Date.now() - start))
+console.log('binary.decode', N / (Date.now() - start))
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   JSON.parse(json)
 }
-console.log('JSON.parse', N/(Date.now() - start))
+console.log('JSON.parse', N / (Date.now() - start))
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   JSON.parse(buffer)
 }
-console.log('JSON.parse(buffer)', N/(Date.now() - start))
+console.log('JSON.parse(buffer)', N / (Date.now() - start))
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   JSON.stringify(JSON.parse(json))
 }
-console.log('JSON.stringify(JSON.parse())', N/(Date.now() - start))
-
+console.log('JSON.stringify(JSON.parse())', N / (Date.now() - start))
 
 // ---
 start = Date.now()
-for(var i = 0; i < N; i++) {
-  binary.decode(b, binary.seekKey(b, binary.seekKey(b, 0, 'dependencies'), 'varint'))
+for (var i = 0; i < N; i++) {
+  binary.decode(
+    b,
+    binary.seekKey(b, binary.seekKey(b, 0, 'dependencies'), 'varint')
+  )
 }
-console.log('binary.seek(string)', N/(Date.now() - start))
+console.log('binary.seek(string)', N / (Date.now() - start))
 
-var _varint = encode('varint'), _dependencies = encode('dependencies')
+var _varint = encode('varint'),
+  _dependencies = encode('dependencies')
 start = Date.now()
-for(var i = 0; i < N; i++) {
-  binary.decode(b, binary.seekKey2(b, binary.seekKey2(b, 0, _dependencies, 0), _varint, 0))
+for (var i = 0; i < N; i++) {
+  binary.decode(
+    b,
+    binary.seekKey2(b, binary.seekKey2(b, 0, _dependencies, 0), _varint, 0)
+  )
 }
-console.log('binary.seek2(encoded)', N/(Date.now() - start))
+console.log('binary.seek2(encoded)', N / (Date.now() - start))
 // ---
 
 start = Date.now()
 var dependencies = Buffer.from('dependencies')
 var varint = Buffer.from('varint')
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   var c, d
-  binary.decode(b, d=binary.seekKey(b, c = binary.seekKey(b, 0, dependencies), varint))
+  binary.decode(
+    b,
+    (d = binary.seekKey(b, (c = binary.seekKey(b, 0, dependencies)), varint))
+  )
 }
-console.log('binary.seek(buffer)', N/(Date.now() - start))
+console.log('binary.seek(buffer)', N / (Date.now() - start))
 // ---
 
 start = Date.now()
 var path = encode(['dependencies', 'varint'])
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   var c, d
-  binary.decode(b, d=binary.seekPath(b, c, path))
+  binary.decode(b, (d = binary.seekPath(b, c, path)))
 }
-console.log('binary.seekPath(encoded)', N/(Date.now() - start))
+console.log('binary.seekPath(encoded)', N / (Date.now() - start))
 // ---
 
 //What Would Mafintosh Do?
@@ -147,19 +152,17 @@ console.log('binary.seekPath(encoded)', N/(Date.now() - start))
 
 var seekPath = binary.createSeekPath(['dependencies', 'varint'])
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   var d
-  binary.decode(b, d=seekPath(b, 0))
+  binary.decode(b, (d = seekPath(b, 0)))
 }
-console.log('binary.seekPath(compiled)', N/(Date.now() - start))
+console.log('binary.seekPath(compiled)', N / (Date.now() - start))
 
 //compare
 
 var compare = binary.createCompareAt([['name'], ['version']])
 start = Date.now()
-for(var i = 0; i < N; i++) {
+for (var i = 0; i < N; i++) {
   compare(b, 0, b, 0)
 }
-console.log('binary.compare()', N/(Date.now() - start))
-
-
+console.log('binary.compare()', N / (Date.now() - start))
