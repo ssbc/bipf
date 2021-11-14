@@ -12,11 +12,18 @@
   },
   "devDependencies": {
     "faker": "^5.5.1",
-    "tape": "^4.9.0"
+    "nyc": "^15.1.0",
+    "tap-spec": "^5.0.0",
+    "tape": "^5.3.1"
   },
   "scripts": {
-    "test": "node test/index.js && node test/compare.js"
+    "test": "tape test/index.js | tap-spec && tape test/compare.js | tap-spec",
+    "coverage": "nyc --reporter=lcov npm test",
+    "benchmark": "node test/perf.js"
   },
   "author": "Dominic Tarr <dominic.tarr@gmail.com> (http://dominictarr.com)",
+  "contributors": [
+    "Andre Staltz <contact@staltz.com>"
+  ],
   "license": "MIT"
 }
