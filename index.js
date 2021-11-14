@@ -355,7 +355,8 @@ function isNull(tag) {
   return tag === 6
 }
 function isUndefined(tag, firstByte) {
-  return tag === 0xe && firstByte === 2
+  // prettier-ignore
+  return tag === 0xE && firstByte === 2
 }
 
 function compare(buffer1, start1, buffer2, start2) {
