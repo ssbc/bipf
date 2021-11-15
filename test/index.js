@@ -63,11 +63,9 @@ testEncodeDecode({ 1: true })
 
 tape('seekPath', (t) => {
   const path = ['dependencies', 'varint']
-  const pathBuf = Buffer.alloc(bipf.encodingLength(path))
-  bipf.encode(path, pathBuf, 0)
+  const pathBuf = bipf.allocAndEncode(path)
 
-  const pkgBuf = Buffer.alloc(bipf.encodingLength(pkg))
-  bipf.encode(pkg, pkgBuf, 0)
+  const pkgBuf = bipf.allocAndEncode(pkg)
 
   t.equal(
     bipf.decode(pkgBuf, bipf.seekPath(pkgBuf, 0, pathBuf, 0)),
@@ -77,22 +75,47 @@ tape('seekPath', (t) => {
   t.end()
 })
 
+tape('seekKey() on an object', (t) => {
+  const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
+  const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
+  t.equals(pointer, 10)
+  const twenty = bipf.decode(objEncoded, pointer)
+  t.equals(twenty, 20)
+  t.end()
+})
+
+tape('seekKey() with a negative start on an object', (t) => {
+  const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
+  const pointer = bipf.seekKey(objEncoded, -1, Buffer.from('y', 'utf-8'))
+  t.equals(pointer, -1)
+  t.end()
+})
+
+tape('seekKey() on an array', (t) => {
+  const objEncoded = bipf.allocAndEncode([10, 20])
+  const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
+  t.equals(pointer, -1)
+  t.end()
+})
+
 tape('iterate() over an encoded object', (t) => {
-  const pkgBuf = Buffer.alloc(bipf.encodingLength(pkg))
-  bipf.encode(pkg, pkgBuf, 0)
+  const obj = { x: 10, y: 'foo', z: { age: 80 } }
+  const objBuf = bipf.allocAndEncode(obj)
 
   const expectedResults = [
-    ['name', 'bipf'],
-    ['description', 'binary in-place format'],
+    [2, 'x', 4, 10],
+    [9, 'y', 11, 'foo'],
+    [15, 'z', 17, { age: 80 }],
   ]
 
-  bipf.iterate(pkgBuf, 0, (buffer, valuePointer, keyPointer) => {
+  bipf.iterate(objBuf, 0, (buffer, valuePointer, keyPointer) => {
     const value = bipf.decode(buffer, valuePointer)
     const key = bipf.decode(buffer, keyPointer)
-    const [expectedKey, expectedValue] = expectedResults.shift()
-    t.deepEquals(key, expectedKey, 'iter key is correct')
-    t.deepEquals(value, expectedValue, 'iter value is correct')
-    if (expectedResults.length === 0) return true
+    const [eKeyPointer, eKey, eValuePointer, eValue] = expectedResults.shift()
+    t.deepEquals(keyPointer, eKeyPointer, 'iter keyPointer is correct')
+    t.deepEquals(key, eKey, 'iter key is correct')
+    t.deepEquals(valuePointer, eValuePointer, 'iter valuePointer is correct')
+    t.deepEquals(value, eValue, 'iter value is correct')
   })
 
   t.end()
@@ -100,8 +123,7 @@ tape('iterate() over an encoded object', (t) => {
 
 tape('iterate() over an encoded array', (t) => {
   const arr = ['cat', 'dog', 'bird', 'elephant']
-  const arrBuf = Buffer.alloc(bipf.encodingLength(arr))
-  bipf.encode(arr, arrBuf, 0)
+  const arrBuf = bipf.allocAndEncode(arr)
 
   const expectedResults = [
     [0, 2, 'cat'],
@@ -116,6 +138,198 @@ tape('iterate() over an encoded array', (t) => {
     t.equal(pointer, expectedPointer, 'iter pointer is correct')
     t.equal(bipf.decode(buffer, pointer), expectedVal, 'iter value is correct')
   })
+
+  t.end()
+})
+
+tape('iterate() over an encoded object, and abort', (t) => {
+  const obj = { x: 10, y: 'foo', z: { age: 80 } }
+  const objBuf = bipf.allocAndEncode(obj)
+
+  const eKeyPointer = 2
+  const eKey = 'x'
+  const eValuePointer = 4
+  const eValue = 10
+
+  bipf.iterate(objBuf, 0, (buffer, valuePointer, keyPointer) => {
+    const value = bipf.decode(buffer, valuePointer)
+    const key = bipf.decode(buffer, keyPointer)
+    t.deepEquals(keyPointer, eKeyPointer, 'iter keyPointer is correct')
+    t.deepEquals(key, eKey, 'iter key is correct')
+    t.deepEquals(valuePointer, eValuePointer, 'iter valuePointer is correct')
+    t.deepEquals(value, eValue, 'iter value is correct')
+    return true // abort
+  })
+
+  t.end()
+})
+
+tape('iterate() over an encoded array, and abort', (t) => {
+  const arr = ['cat', 'dog', 'bird', 'elephant']
+  const arrBuf = bipf.allocAndEncode(arr)
+
+  const expectedIdx = 0
+  const expectedPointer = 2
+  const expectedVal = 'cat'
+
+  bipf.iterate(arrBuf, 0, (buffer, pointer, idx) => {
+    t.equal(idx, expectedIdx, 'iter index is correct')
+    t.equal(pointer, expectedPointer, 'iter pointer is correct')
+    t.equal(bipf.decode(buffer, pointer), expectedVal, 'iter value is correct')
+    return true // abort
+  })
+
+  t.end()
+})
+
+tape('iterate() on an encoded boolnull returns -1', (t) => {
+  const buf = bipf.allocAndEncode(true)
+
+  const result = bipf.iterate(buf, 0, (buffer, pointer, idx) => {
+    t.fail('iterator should never be called')
+  })
+
+  t.equals(result, -1, 'returned -1')
+  t.end()
+})
+
+tape('getEncodedLength()', (t) => {
+  const trueEncoded = bipf.allocAndEncode(true)
+  t.equals(bipf.getEncodedLength(trueEncoded, 0), 1)
+
+  const nullEncoded = bipf.allocAndEncode(null)
+  t.equals(bipf.getEncodedLength(nullEncoded, 0), 0)
+
+  t.end()
+})
+
+tape('getEncodedType()', (t) => {
+  const trueEncoded = bipf.allocAndEncode(true)
+  const nullEncoded = bipf.allocAndEncode(null)
+  const undefinedEncoded = bipf.allocAndEncode(undefined)
+  const stringEncoded = bipf.allocAndEncode('foo')
+  const intEncoded = bipf.allocAndEncode(42)
+  const doubleEncoded = bipf.allocAndEncode(3.1415)
+  const arrayEncoded = bipf.allocAndEncode([10, 20, 30])
+  const objectEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
+  const bufferEncoded = bipf.allocAndEncode(Buffer.from('abc', 'utf-8'))
+
+  t.equals(bipf.getEncodedType(trueEncoded), bipf.types.boolnull)
+  t.equals(bipf.getEncodedType(nullEncoded), bipf.types.boolnull)
+  t.equals(bipf.getEncodedType(undefinedEncoded), bipf.types.boolnull)
+  t.equals(bipf.getEncodedType(stringEncoded), bipf.types.string)
+  t.equals(bipf.getEncodedType(intEncoded), bipf.types.int)
+  t.equals(bipf.getEncodedType(doubleEncoded), bipf.types.double)
+  t.equals(bipf.getEncodedType(arrayEncoded), bipf.types.array)
+  t.equals(bipf.getEncodedType(objectEncoded), bipf.types.object)
+  t.equals(bipf.getEncodedType(bufferEncoded), bipf.types.buffer)
+
+  t.end()
+})
+
+// Converts a string in binary bits to a buffer
+function bufferFromBinary(str) {
+  const goodStr = str.replace(/[^01]/g, '')
+  const buf = Buffer.alloc(goodStr.length / 8)
+  for (let i = 0; i < goodStr.length; i += 8) {
+    buf[i / 8] = parseInt(goodStr.substr(i, 8), 2)
+  }
+  return buf
+}
+
+tape('error: decode array with bad item: reserved type', (t) => {
+  //                                  len   type    len   type
+  const faultyBuf = bufferFromBinary('00001 100' + '00000 111')
+
+  t.throws(
+    () => {
+      bipf.decode(faultyBuf, 0)
+    },
+    /reserved type/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: decode object with bad value: reserved type', (t) => {
+  const faultyBuf = bufferFromBinary(
+    // len type    len   type    ascii 78     len   type
+    '00011 101' + '00001 000' + '01111000' + '00000 111'
+  )
+
+  t.throws(
+    () => {
+      bipf.decode(faultyBuf, 0)
+    },
+    /reserved type/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: decode object with bad key: boolnull', (t) => {
+  const faultyBuf = bufferFromBinary(
+    // len type    len   type    true          len   type
+    '00011 101' + '00001 110' + '0000 0001' + '00000 111'
+  )
+
+  t.throws(
+    () => {
+      bipf.decode(faultyBuf, 0)
+    },
+    /required type:string/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: decode bad boolnull', (t) => {
+  const faultyBuf = bufferFromBinary(
+    // len type    number 4
+    '00001 110' + '0000 0100'
+  )
+
+  t.throws(
+    () => {
+      bipf.decode(faultyBuf, 0)
+    },
+    /invalid boolnull/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: decode bad length for boolnull', (t) => {
+  const faultyBuf = bufferFromBinary(
+    // len type    true          number 4
+    '00011 110' + '0000 0001' + '0000 0100'
+  )
+
+  t.throws(
+    () => {
+      bipf.decode(faultyBuf, 0)
+    },
+    /invalid boolnull, length must = 1/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: symbols cannot be encoded', (t) => {
+  t.throws(() => {
+    bipf.encodingLength(Symbol.for('foo'))
+  })
+
+  const buf = Buffer.alloc(64)
+
+  t.throws(() => {
+    bipf.encode(Symbol.for('foo'), buf, 0)
+  }, /unknown type/)
 
   t.end()
 })
