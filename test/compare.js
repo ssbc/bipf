@@ -1,16 +1,14 @@
-
 var tape = require('tape')
 var bipf = require('../')
 
-function encode (value) {
+function encode(value) {
   var b = Buffer.alloc(bipf.encodingLength(value))
   bipf.encode(value, b, 0)
   return b
 }
 
 var a = []
-for(var i = 0; i < 100;i++)
-  a.push(encode({random: Math.random(), i: i}))
+for (var i = 0; i < 100; i++) a.push(encode({ random: Math.random(), i: i }))
 
 var key = Buffer.from('random')
 
@@ -28,7 +26,7 @@ tape('sorted', function (t) {
     return bipf.decode(b, 0)
   })
   max = b[0]
-  for(var i = 0; i < b.length; i++) {
+  for (var i = 0; i < b.length; i++) {
     t.ok(b[i].random >= max.random)
     max = b[i]
   }
@@ -37,8 +35,18 @@ tape('sorted', function (t) {
 
 tape('sort with null undefined', function (t) {
   var values = [
-    null, undefined, 0, -1, 1, 'hello',
-    Buffer.from('abc'), [], {}, 0.23, true, false
+    null,
+    undefined,
+    0,
+    -1,
+    1,
+    'hello',
+    Buffer.from('abc'),
+    [],
+    {},
+    0.23,
+    true,
+    false,
   ]
 
   var encoded = values.map(encode)
