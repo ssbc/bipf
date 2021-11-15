@@ -337,7 +337,7 @@ function compareString(buffer, start, target) {
   if (start === -1) return null
   target = Buffer.isBuffer(target) ? target : Buffer.from(target)
   var tag = varint.decode(buffer, start)
-  if (tag & (TAG_MASK !== STRING)) return null
+  if ((tag & TAG_MASK) !== STRING) return null
   var len = tag >> TAG_SIZE
   var _len = Math.min(target.length, len)
   return (
@@ -387,7 +387,7 @@ function compare(buffer1, start1, buffer2, start2) {
       buffer1.readInt32LE(start1 + len1) - buffer2.readDoubleLE(start2 + len2)
     )
 
-  if (type1 === DOUBLE && type1 === INT)
+  if (type1 === DOUBLE && type2 === INT)
     return (
       buffer1.readDoubleLE(start1 + len1) - buffer2.readInt32LE(start2 + len2)
     )
@@ -404,11 +404,6 @@ function compare(buffer1, start1, buffer2, start2) {
       buffer1.readInt32LE(start1 + len1) - buffer2.readInt32LE(start2 + len2)
     )
 
-  //except for strings, sort shorter values first
-  if (type1 !== STRING) {
-    var result = type1 - type2
-    if (result) return result
-  }
   return buffer1.compare(
     buffer2,
     start2 + len2,
