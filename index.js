@@ -236,7 +236,7 @@ function seekKey(buffer, start, target) {
   if (start === -1) return -1
   var tag = varint.decode(buffer, start)
   var type = tag & TAG_MASK
-  if (type != OBJECT) return -1
+  if (type !== OBJECT) return -1
   target = Buffer.isBuffer(target) ? target : Buffer.from(target)
   var targetLength = target.length
   var len = tag >> TAG_SIZE
@@ -269,7 +269,7 @@ function seekKey(buffer, start, target) {
 function seekKey2(buffer, start, target, t_start) {
   var tag = varint.decode(buffer, start)
   var type = tag & TAG_MASK
-  if (type != OBJECT) return -1
+  if (type !== OBJECT) return -1
   var c = varint.decode.bytes
   var len = tag >> TAG_SIZE
   var t_tag = varint.decode(target, t_start)
