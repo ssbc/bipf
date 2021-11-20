@@ -187,7 +187,6 @@ function encode(value, buffer, start, _len) {
   //  if(!buffer)
   //    buffer = Buffer.allocUnsafe(len)
   //throw new Error('buffer must be provided')
-  if (type === 7) throw new Error('reserved type')
   varint.encode((len << TAG_SIZE) | type, buffer, start)
   var bytes = varint.encode.bytes
   return encoders[type](value, buffer, start + bytes) + bytes
@@ -201,21 +200,24 @@ function allocAndEncode(value) {
 }
 
 function decode_type(type, buffer, start, len) {
-  return type < ARRAY
-    ? type === STRING
-      ? decode_string(buffer, start, len)
-      : type === BUFFER
-      ? decode_buffer(buffer, start, len)
-      : type === INT
-      ? decode_integer(buffer, start, len)
-      : decode_double(buffer, start, len)
-    : type === ARRAY
-    ? decode_array(buffer, start, len)
-    : type === OBJECT
-    ? decode_object(buffer, start, len)
-    : type === BOOLNULL
-    ? decode_boolnull(buffer, start, len)
-    : decode_reserved(buffer, start, len)
+  switch (type) {
+    case STRING:
+      return decode_string(buffer, start, len)
+    case BUFFER:
+      return decode_buffer(buffer, start, len)
+    case INT:
+      return decode_integer(buffer, start, len)
+    case DOUBLE:
+      return decode_double(buffer, start, len)
+    case ARRAY:
+      return decode_array(buffer, start, len)
+    case OBJECT:
+      return decode_object(buffer, start, len)
+    case BOOLNULL:
+      return decode_boolnull(buffer, start, len)
+    default:
+      throw new Error('unable to decode type=' + type + ' ' + buffer)
+  }
 }
 
 function decode(buffer, start) {
