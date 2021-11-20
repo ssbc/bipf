@@ -75,6 +75,30 @@ tape('seekPath', (t) => {
   t.end()
 })
 
+tape('seekPath on fields that dont exist returns -1', (t) => {
+  const path = ['dependencies', 'varint', 'foo']
+  const pathBuf = bipf.allocAndEncode(path)
+
+  const pkgBuf = bipf.allocAndEncode(pkg)
+
+  t.equal(bipf.seekPath(pkgBuf, 0, pathBuf, 0), -1)
+  t.end()
+})
+
+tape('error: seekPath on a non-array path', (t) => {
+  const path = 'dependencies'
+  const pathBuf = bipf.allocAndEncode(path)
+
+  const pkgBuf = bipf.allocAndEncode(pkg)
+
+  t.throws(
+    () => bipf.decode(pkgBuf, bipf.seekPath(pkgBuf, 0, pathBuf, 0)),
+    /path must be encoded array/
+  )
+
+  t.end()
+})
+
 tape('seekKey() on an object', (t) => {
   const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
   const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
@@ -95,6 +119,14 @@ tape('seekKey() on an array', (t) => {
   const objEncoded = bipf.allocAndEncode([10, 20])
   const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
   t.equals(pointer, -1)
+  t.end()
+})
+
+tape('slice() on an object field', (t) => {
+  const objEncoded = bipf.allocAndEncode({ x: 'foo', y: 'bar' })
+  const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
+  const sliced = bipf.slice(objEncoded, pointer)
+  t.equal(sliced.toString('utf-8'), 'bar')
   t.end()
 })
 
@@ -314,6 +346,21 @@ tape('error: decode bad length for boolnull', (t) => {
       bipf.decode(faultyBuf, 0)
     },
     /invalid boolnull, length must = 1/,
+    'throws error'
+  )
+
+  t.end()
+})
+
+tape('error: decode reserved', (t) => {
+  const buf = bipf.allocAndEncode(null)
+  buf[0] = 0x7f
+
+  t.throws(
+    () => {
+      bipf.decode(buf, 0)
+    },
+    /unable to decode/,
     'throws error'
   )
 
