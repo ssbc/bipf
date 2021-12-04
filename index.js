@@ -355,6 +355,20 @@ function compareString(buffer, start, target) {
   )
 }
 
+function compareValue(buffer, start, target) {
+  if (start === -1) return null
+  var tag = varint.decode(buffer, start)
+  var len = tag >> TAG_SIZE
+  var _len = Math.min(target.length, len)
+  return buffer.compare(
+    target,
+    0,
+    _len,
+    start + varint.decode.bytes,
+    start + varint.decode.bytes + _len
+  )
+}
+
 function isNull(tag) {
   return tag === 6
 }
@@ -472,6 +486,7 @@ module.exports = {
   seekKey2: seekKey2,
   createSeekPath: createSeekPath,
   seekPath: seekPath,
+  compareValue: compareValue,
   compareString: compareString,
   compare: compare,
   createCompareAt: createCompareAt,

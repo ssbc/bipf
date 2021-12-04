@@ -76,6 +76,25 @@ tape('compareString() with a buffer target', (t) => {
   t.end()
 })
 
+tape('compareValue() with a buffer target', (t) => {
+  const strBuf = bipf.allocAndEncode({ x: 'foo' })
+  const pointer = bipf.seekKey(strBuf, 0, Buffer.from('x'))
+  const eq = bipf.compareValue(strBuf, pointer, Buffer.from('foo'))
+  const lt = bipf.compareValue(strBuf, pointer, Buffer.from('abc'))
+  const gt = bipf.compareValue(strBuf, pointer, Buffer.from('good'))
+  t.equals(eq, 0)
+  t.equals(lt, 1)
+  t.equals(gt, -1)
+  t.end()
+})
+
+tape('compareValue() with a negative start', (t) => {
+  const strBuf = bipf.allocAndEncode('foo')
+  const result = bipf.compareValue(strBuf, -1, Buffer.from('foo'))
+  t.equals(result, null)
+  t.end()
+})
+
 tape('compare() can sort with null undefined too', (t) => {
   const values = [
     null,
