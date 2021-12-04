@@ -163,6 +163,6 @@ console.log('binary.seekPath(compiled)', N / (Date.now() - start))
 var compare = binary.createCompareAt([['name'], ['version']])
 start = Date.now()
 for (var i = 0; i < N; i++) {
-  compare(b, 0, b, 0)
+  compare(b, b)
 }
 console.log('binary.compare()', N / (Date.now() - start))
