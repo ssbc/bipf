@@ -1,4 +1,4 @@
-var binary = require('../')
+var BIPF = require('../')
 var faker = require('faker')
 
 function getNonNested() {
@@ -52,13 +52,13 @@ var pkg = buildStructure(0)
 console.log('Structure generated in ' + (new Date() - genDate) + 'ms')
 
 function encode(string) {
-  var b = Buffer.alloc(binary.encodingLength(string))
-  binary.encode(string, b, 0)
+  var b = Buffer.alloc(BIPF.encodingLength(string))
+  BIPF.encode(string, b, 0)
   return b
 }
 
 var value = pkg
-var b = Buffer.alloc(binary.encodingLength(value))
+var b = Buffer.alloc(BIPF.encodingLength(value))
 var start, json
 var json = JSON.stringify(value)
 var buffer = Buffer.from(JSON.stringify(value))
@@ -68,10 +68,10 @@ console.log('operation, ops/ms')
 start = Date.now()
 for (var i = 0; i < N; i++) {
   //not an honest test
-  b = Buffer.allocUnsafe(binary.encodingLength(value))
-  binary.encode(value, b, 0)
+  b = Buffer.allocUnsafe(BIPF.encodingLength(value))
+  BIPF.encode(value, b, 0)
 }
-console.log('binary.encode', N / (Date.now() - start))
+console.log('BIPF.encode', N / (Date.now() - start))
 // ---
 start = Date.now()
 for (var i = 0; i < N; i++) {
@@ -81,9 +81,9 @@ console.log('JSON.stringify', N / (Date.now() - start))
 // ---
 start = Date.now()
 for (var i = 0; i < N; i++) {
-  binary.decode(b, 0)
+  BIPF.decode(b, 0)
 }
-console.log('binary.decode', N / (Date.now() - start))
+console.log('BIPF.decode', N / (Date.now() - start))
 // ---
 start = Date.now()
 for (var i = 0; i < N; i++) {
@@ -106,23 +106,20 @@ console.log('JSON.stringify(JSON.parse())', N / (Date.now() - start))
 // ---
 start = Date.now()
 for (var i = 0; i < N; i++) {
-  binary.decode(
-    b,
-    binary.seekKey(b, binary.seekKey(b, 0, 'dependencies'), 'varint')
-  )
+  BIPF.decode(b, BIPF.seekKey(b, BIPF.seekKey(b, 0, 'dependencies'), 'varint'))
 }
-console.log('binary.seek(string)', N / (Date.now() - start))
+console.log('BIPF.seek(string)', N / (Date.now() - start))
 
 var _varint = encode('varint'),
   _dependencies = encode('dependencies')
 start = Date.now()
 for (var i = 0; i < N; i++) {
-  binary.decode(
+  BIPF.decode(
     b,
-    binary.seekKey2(b, binary.seekKey2(b, 0, _dependencies, 0), _varint, 0)
+    BIPF.seekKey2(b, BIPF.seekKey2(b, 0, _dependencies, 0), _varint, 0)
   )
 }
-console.log('binary.seek2(encoded)', N / (Date.now() - start))
+console.log('BIPF.seek2(encoded)', N / (Date.now() - start))
 // ---
 
 start = Date.now()
@@ -130,39 +127,39 @@ var dependencies = Buffer.from('dependencies')
 var varint = Buffer.from('varint')
 for (var i = 0; i < N; i++) {
   var c, d
-  binary.decode(
+  BIPF.decode(
     b,
-    (d = binary.seekKey(b, (c = binary.seekKey(b, 0, dependencies)), varint))
+    (d = BIPF.seekKey(b, (c = BIPF.seekKey(b, 0, dependencies)), varint))
   )
 }
-console.log('binary.seek(buffer)', N / (Date.now() - start))
+console.log('BIPF.seek(buffer)', N / (Date.now() - start))
 // ---
 
 start = Date.now()
 var path = encode(['dependencies', 'varint'])
 for (var i = 0; i < N; i++) {
   var c, d
-  binary.decode(b, (d = binary.seekPath(b, c, path)))
+  BIPF.decode(b, (d = BIPF.seekPath(b, c, path)))
 }
-console.log('binary.seekPath(encoded)', N / (Date.now() - start))
+console.log('BIPF.seekPath(encoded)', N / (Date.now() - start))
 // ---
 
 //What Would Mafintosh Do?
 //he'd take the path and generate javascript that unrolled seek...
 
-var seekPath = binary.createSeekPath(['dependencies', 'varint'])
+var seekPath = BIPF.createSeekPath(['dependencies', 'varint'])
 start = Date.now()
 for (var i = 0; i < N; i++) {
   var d
-  binary.decode(b, (d = seekPath(b, 0)))
+  BIPF.decode(b, (d = seekPath(b, 0)))
 }
-console.log('binary.seekPath(compiled)', N / (Date.now() - start))
+console.log('BIPF.seekPath(compiled)', N / (Date.now() - start))
 
 //compare
 
-var compare = binary.createCompareAt([['name'], ['version']])
+var compare = BIPF.createCompareAt([['name'], ['version']])
 start = Date.now()
 for (var i = 0; i < N; i++) {
   compare(b, b)
 }
-console.log('binary.compare()', N / (Date.now() - start))
+console.log('BIPF.compare()', N / (Date.now() - start))
