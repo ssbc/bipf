@@ -146,7 +146,7 @@ function decode_boolnull(buffer, start, length) {
 function getType(value) {
   if ('string' === typeof value || value instanceof Date) return STRING
   else if (Buffer.isBuffer(value)) return BUFFER
-  else if (Number.isInteger(value) && Math.abs(value) <= 4294967296) return INT
+  else if (Number.isInteger(value) && Math.abs(value) <= 2147483647) return INT
   else if ('number' === typeof value && Number.isFinite(value))
     //do not support Infinity or NaN (because JSON)
     return DOUBLE
