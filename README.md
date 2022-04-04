@@ -233,6 +233,11 @@ see performance section for discussion on the performance
 of seek - if it's only needed to parse a couple of elements,
 it can be significantly faster than parsing.
 
+### seekKeyCached (buffer, start, target) => pointer
+
+Same as `seekKey`, but uses a cache to avoid re-seeking the pointers if the
+same arguments have been provided in the past.
+
 ### seekPath (buffer, start, array_of_buffers) => pointer
 
 The same as `seekKey`, except for a recursive path.
