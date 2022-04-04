@@ -268,8 +268,8 @@ function seekKey(buffer, start, target) {
   return -1
 }
 
-//         buffer ->   start ->        target -> result
-// WeakMap<Buffer, Map<number, WeakMap<Buffer, number>>>
+//         buffer ->   start ->    target -> result
+// WeakMap<Buffer, Map<number, Map<string, number>>>
 const cache1 = new WeakMap()
 
 function seekKeyCached(buffer, start, target) {
@@ -280,8 +280,11 @@ function seekKeyCached(buffer, start, target) {
   }
   let cache3 = cache2.get(start)
   if (!cache3) {
-    cache3 = new WeakMap()
+    cache3 = new Map()
     cache2.set(start, cache3)
+  }
+  if (Buffer.isBuffer(target)) {
+    throw new Error('seekKeyCached only supports string target, not buffer')
   }
   if (cache3.has(target)) {
     return cache3.get(target)
