@@ -236,7 +236,8 @@ it can be significantly faster than parsing.
 ### seekKeyCached (buffer, start, target) => pointer
 
 Same as `seekKey`, but uses a cache to avoid re-seeking the pointers if the
-same arguments have been provided in the past.
+same arguments have been provided in the past. However, `target` must be a
+string, not a buffer.
 
 ### seekPath (buffer, start, array_of_buffers) => pointer
 
