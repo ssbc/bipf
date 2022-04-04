@@ -59,10 +59,12 @@ function encode(string) {
 }
 
 var b = Buffer.alloc(BIPF.encodingLength(fakeData))
+const msgs = []
 var start, json
 var json = JSON.stringify(fakeData)
 var buffer = Buffer.from(JSON.stringify(fakeData))
 var N = 10000
+var M = 100 // number of messages
 
 console.log('operation, ops/ms')
 start = Date.now()
@@ -70,6 +72,15 @@ for (var i = 0; i < N; i++) {
   //not an honest test
   b = Buffer.allocUnsafe(BIPF.encodingLength(fakeData))
   BIPF.encode(fakeData, b, 0)
+  if (i < M) {
+    msgs.push(
+      BIPF.allocAndEncode({
+        name: 'bipf',
+        version: '' + i,
+        dependencies: { varint: '1.2.3' },
+      })
+    )
+  }
 }
 console.log('BIPF.encode', N / (Date.now() - start))
 // ---
@@ -181,3 +192,34 @@ for (var i = 0; i < N; i++) {
   compare(b, b)
 }
 console.log('BIPF.compare()', N / (Date.now() - start))
+
+start = Date.now()
+var dependencies = Buffer.from('dependencies')
+var varint = Buffer.from('varint')
+var NM = N / M
+for (var i = 0; i < N; i++) {
+  var msg = msgs[Math.floor(i / NM)]
+  var c, d
+  BIPF.decode(
+    msg,
+    (d = BIPF.seekKey(msg, (c = BIPF.seekKey(msg, 0, dependencies)), varint))
+  )
+}
+console.log('BIPF.seek(uniqueMsg)', N / (Date.now() - start))
+// ---
+
+start = Date.now()
+for (var i = 0; i < N; i++) {
+  var msg = msgs[Math.floor(i / NM)]
+  var c, d
+  BIPF.decode(
+    msg,
+    (d = BIPF.seekKeyCached(
+      msg,
+      (c = BIPF.seekKeyCached(msg, 0, 'dependencies')),
+      'varint'
+    ))
+  )
+}
+console.log('BIPF.seekCached(uniqueMsg)', N / (Date.now() - start))
+// ---
