@@ -16,11 +16,11 @@
     "nyc": "^15.1.0",
     "prettier": "^2.1.2",
     "pretty-quick": "^3.1.0",
-    "tap-spec": "^5.0.0",
+    "tap-arc": "~0.3.4",
     "tape": "^5.3.1"
   },
   "scripts": {
-    "test": "tape test/index.js | tap-spec && tape test/compare.js | tap-spec",
+    "test": "tape test/index.js | tap-arc && tape test/compare.js | tap-arc",
     "coverage": "nyc --reporter=lcov npm test",
     "format-code": "prettier --write \"*.js\" \"test/*.js\"",
     "format-code-staged": "pretty-quick --staged --pattern \"*.js\" --pattern \"test/*.js\"",
