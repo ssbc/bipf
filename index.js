@@ -280,9 +280,6 @@ function seekKeyCached(buffer, start, target) {
   if (typeof target !== 'string') {
     throw new Error('seekKeyCached only supports string target')
   }
-  if (Buffer.isBuffer(target)) {
-    throw new Error('seekKeyCached only supports string target, not buffer')
-  }
   if (cache3.has(target)) {
     return cache3.get(target)
   } else {
