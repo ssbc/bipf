@@ -274,9 +274,9 @@ const cache1 = new WeakMap()
 
 function seekKeyCached(buffer, start, target) {
   let cache2 = cache1.get(buffer)
-  if (!cache2) cache1.set(buffer, cache2 = new Map())
+  if (!cache2) cache1.set(buffer, (cache2 = new Map()))
   let cache3 = cache2.get(start)
-  if (!cache3) cache2.set(start, cache3 = new Map())
+  if (!cache3) cache2.set(start, (cache3 = new Map()))
   if (typeof target !== 'string') {
     throw new Error('seekKeyCached only supports string target')
   }
