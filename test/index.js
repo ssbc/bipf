@@ -162,7 +162,7 @@ tape('seekKeyCached() on an object with buffer target', (t) => {
   const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
   t.throws(() => {
     bipf.seekKeyCached(objEncoded, 0, Buffer.from('y', 'utf-8'))
-  }, /not buffer/)
+  }, /seekKeyCached only supports string target/)
   t.end()
 })
 
