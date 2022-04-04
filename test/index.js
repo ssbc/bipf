@@ -158,6 +158,15 @@ tape('seekKey() on an object', (t) => {
   t.end()
 })
 
+tape('seekKeyCached() on an object', (t) => {
+  const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
+  const pointer = bipf.seekKeyCached(objEncoded, 0, Buffer.from('y', 'utf-8'))
+  t.equals(pointer, 10)
+  const twenty = bipf.decode(objEncoded, pointer)
+  t.equals(twenty, 20)
+  t.end()
+})
+
 tape('seekKey() with a negative start on an object', (t) => {
   const objEncoded = bipf.allocAndEncode({ x: 10, y: 20 })
   const pointer = bipf.seekKey(objEncoded, -1, Buffer.from('y', 'utf-8'))

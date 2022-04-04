@@ -268,6 +268,30 @@ function seekKey(buffer, start, target) {
   return -1
 }
 
+//         buffer ->   start ->        target -> result
+// WeakMap<Buffer, Map<number, WeakMap<Buffer, number>>>
+const cache1 = new WeakMap()
+
+function seekKeyCached(buffer, start, target) {
+  let cache2 = cache1.get(buffer)
+  if (!cache2) {
+    cache2 = new Map()
+    cache1.set(buffer, cache2)
+  }
+  let cache3 = cache2.get(start)
+  if (!cache3) {
+    cache3 = new WeakMap()
+    cache2.set(start, cache3)
+  }
+  if (cache3.has(target)) {
+    return cache3.get(target)
+  } else {
+    const result = seekKey(buffer, start, target)
+    cache3.set(target, result)
+    return result
+  }
+}
+
 function seekKey2(buffer, start, target, t_start) {
   var tag = varint.decode(buffer, start)
   var type = tag & TAG_MASK
@@ -469,6 +493,7 @@ module.exports = {
   getEncodedLength: getEncodedLength,
   getEncodedType: getEncodedType,
   seekKey: seekKey,
+  seekKeyCached: seekKeyCached,
   seekKey2: seekKey2,
   createSeekPath: createSeekPath,
   seekPath: seekPath,

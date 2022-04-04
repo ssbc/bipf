@@ -139,6 +139,23 @@ console.log('BIPF.seek(buffer)', N / (Date.now() - start))
 // ---
 
 start = Date.now()
+var dependencies = Buffer.from('dependencies')
+var varint = Buffer.from('varint')
+for (var i = 0; i < N; i++) {
+  var c, d
+  BIPF.decode(
+    b,
+    (d = BIPF.seekKeyCached(
+      b,
+      (c = BIPF.seekKeyCached(b, 0, dependencies)),
+      varint
+    ))
+  )
+}
+console.log('BIPF.seekCached(buffer)', N / (Date.now() - start))
+// ---
+
+start = Date.now()
 var path = encode(['dependencies', 'varint'])
 for (var i = 0; i < N; i++) {
   var c, d
