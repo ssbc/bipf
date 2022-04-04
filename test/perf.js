@@ -48,8 +48,9 @@ function buildStructure(level) {
 faker.seed(348230432)
 console.log('Generating JSON structure...')
 const genDate = new Date()
-var pkg = buildStructure(0)
+var fakeData = buildStructure(0)
 console.log('Structure generated in ' + (new Date() - genDate) + 'ms')
+const pkg = require('../package.json')
 
 function encode(string) {
   var b = Buffer.alloc(BIPF.encodingLength(string))
@@ -57,25 +58,24 @@ function encode(string) {
   return b
 }
 
-var value = pkg
-var b = Buffer.alloc(BIPF.encodingLength(value))
+var b = Buffer.alloc(BIPF.encodingLength(fakeData))
 var start, json
-var json = JSON.stringify(value)
-var buffer = Buffer.from(JSON.stringify(value))
+var json = JSON.stringify(fakeData)
+var buffer = Buffer.from(JSON.stringify(fakeData))
 var N = 10000
 
 console.log('operation, ops/ms')
 start = Date.now()
 for (var i = 0; i < N; i++) {
   //not an honest test
-  b = Buffer.allocUnsafe(BIPF.encodingLength(value))
-  BIPF.encode(value, b, 0)
+  b = Buffer.allocUnsafe(BIPF.encodingLength(fakeData))
+  BIPF.encode(fakeData, b, 0)
 }
 console.log('BIPF.encode', N / (Date.now() - start))
 // ---
 start = Date.now()
 for (var i = 0; i < N; i++) {
-  JSON.stringify(value)
+  JSON.stringify(fakeData)
 }
 console.log('JSON.stringify', N / (Date.now() - start))
 // ---
@@ -102,6 +102,9 @@ for (var i = 0; i < N; i++) {
   JSON.stringify(JSON.parse(json))
 }
 console.log('JSON.stringify(JSON.parse())', N / (Date.now() - start))
+
+var b = Buffer.alloc(BIPF.encodingLength(pkg))
+BIPF.encode(pkg, b, 0)
 
 // ---
 start = Date.now()
