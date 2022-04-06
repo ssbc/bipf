@@ -183,8 +183,7 @@ function getEncodedType(buffer, start) {
 function encode(value, buffer, start, _len) {
   start = start | 0
   var type = getType(value)
-  if ('function' !== typeof encodingLengthers[type])
-    throw new Error('unknown type:' + type + ', ' + JSON.stringify(value))
+  if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
   var len = _len === undefined ? encodingLengthers[type](value) : _len
   //  if(!buffer)
   //    buffer = Buffer.allocUnsafe(len)
