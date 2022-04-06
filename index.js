@@ -157,8 +157,7 @@ function getType(value) {
 
 function encodingLength(value) {
   var type = getType(value)
-  if ('function' !== typeof encodingLengthers[type])
-    throw new Error('unknown type:' + type + ', ' + JSON.stringify(value))
+  if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
   var len = encodingLengthers[type](value)
   return varint.encodingLength(len << TAG_SIZE) + len
 }
