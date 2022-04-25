@@ -295,10 +295,11 @@ function seekKey2(buffer, start, target, t_start) {
   var len = tag >> TAG_SIZE
   var t_tag = varint.decode(target, t_start)
   var t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
-  for (; c + t_length < len; ) {
-    var b_tag = varint.decode(buffer, start + c)
+  for (; c < len; ) {
+    var key_tag = varint.decode(buffer, start + c)
+
     if (
-      b_tag === t_tag &&
+      key_tag === t_tag &&
       buffer.compare(
         target,
         t_start,
@@ -307,11 +308,16 @@ function seekKey2(buffer, start, target, t_start) {
         start + c + t_length
       ) === 0
     )
-      return start + c + (b_tag >> TAG_SIZE) + varint.decode.bytes
-    else {
-      c += (b_tag >> TAG_SIZE) + varint.decode.bytes //key
-      c += (varint.decode(buffer, start + c) >> TAG_SIZE) + varint.decode.bytes //value
-    }
+      return start + c + t_length
+
+    c += varint.decode.bytes
+    var key_len = key_tag >> TAG_SIZE
+    c += key_len
+
+    var value_tag = varint.decode(buffer, start + c)
+    c += varint.decode.bytes
+    var value_len = value_tag >> TAG_SIZE
+    c += value_len
   }
   return -1
 }
