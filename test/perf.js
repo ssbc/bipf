@@ -124,6 +124,16 @@ for (var i = 0; i < N; i++) {
 }
 console.log('BIPF.seek(string)', N / (Date.now() - start))
 
+// ---
+
+start = Date.now()
+var dependencies = Buffer.from('dependencies')
+var varint = Buffer.from('varint')
+for (var i = 0; i < N; i++) {
+  BIPF.decode(b, BIPF.seekKey(b, BIPF.seekKey(b, 0, dependencies), varint))
+}
+console.log('BIPF.seek(buffer)', N / (Date.now() - start))
+
 var _varint = encode('varint'),
   _dependencies = encode('dependencies')
 start = Date.now()
@@ -134,19 +144,15 @@ for (var i = 0; i < N; i++) {
   )
 }
 console.log('BIPF.seek2(encoded)', N / (Date.now() - start))
-// ---
 
 start = Date.now()
-var dependencies = Buffer.from('dependencies')
-var varint = Buffer.from('varint')
 for (var i = 0; i < N; i++) {
-  var c, d
   BIPF.decode(
     b,
-    (d = BIPF.seekKey(b, (c = BIPF.seekKey(b, 0, dependencies)), varint))
+    BIPF.seekKey2(b, BIPF.seekKey2(b, 0, _dependencies, 0), _varint, 0)
   )
 }
-console.log('BIPF.seek(buffer)', N / (Date.now() - start))
+console.log('BIPF.seek2(encoded) second run', N / (Date.now() - start))
 // ---
 
 start = Date.now()

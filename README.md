@@ -233,6 +233,11 @@ see performance section for discussion on the performance
 of seek - if it's only needed to parse a couple of elements,
 it can be significantly faster than parsing.
 
+### seekKey2 (buffer, start, target, target_start) => pointer
+
+Same as `seekKey`, except `target` must be an encoded value. This is
+usually done using `allocAndEncode`. This is a bit faster.
+
 ### seekKeyCached (buffer, start, target) => pointer
 
 Same as `seekKey`, but uses a cache to avoid re-seeking the pointers if the
