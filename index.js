@@ -20,8 +20,8 @@ const {
 const { compareString, compare, createCompareAt } = require('./compare')
 
 function slice(buffer, start) {
-  var tag_value = varint.decode(buffer, start)
-  var length = tag_value >> TAG_SIZE
+  const tag_value = varint.decode(buffer, start)
+  const length = tag_value >> TAG_SIZE
   return buffer.slice(
     start + varint.decode.bytes,
     start + varint.decode.bytes + length
@@ -29,25 +29,25 @@ function slice(buffer, start) {
 }
 
 function iterate(buffer, start, iter) {
-  var tag = varint.decode(buffer, start)
-  var len = tag >> TAG_SIZE
-  var type = tag & TAG_MASK
+  const tag = varint.decode(buffer, start)
+  const len = tag >> TAG_SIZE
+  const type = tag & TAG_MASK
   if (type === OBJECT) {
-    for (var c = varint.decode.bytes; c < len; ) {
-      var key_start = start + c
-      var key_tag = varint.decode(buffer, key_start)
+    for (let c = varint.decode.bytes; c < len; ) {
+      const key_start = start + c
+      const key_tag = varint.decode(buffer, key_start)
       c += varint.decode.bytes
       c += key_tag >> TAG_SIZE
-      var value_start = start + c
-      var value_tag = varint.decode(buffer, value_start)
-      var next_start = varint.decode.bytes + (value_tag >> TAG_SIZE)
+      const value_start = start + c
+      const value_tag = varint.decode(buffer, value_start)
+      const next_start = varint.decode.bytes + (value_tag >> TAG_SIZE)
       if (iter(buffer, value_start, key_start)) return start
       c += next_start
     }
     return start
   } else if (type === ARRAY) {
-    var i = 0
-    for (var c = varint.decode.bytes; c < len; ) {
+    let i = 0
+    for (let c = varint.decode.bytes; c < len; ) {
       if (iter(buffer, start + c, i++)) return start
       var value_tag = varint.decode(buffer, start + c)
       c += varint.decode.bytes + (value_tag >> TAG_SIZE)

@@ -10,17 +10,17 @@ const cache1 = new WeakMap()
 
 function seekKey(buffer, start, target) {
   if (start === -1) return -1
-  var tag = varint.decode(buffer, start)
-  var type = tag & TAG_MASK
+  const tag = varint.decode(buffer, start)
+  const type = tag & TAG_MASK
   if (type !== OBJECT) return -1
   target = Buffer.isBuffer(target) ? target : Buffer.from(target)
-  var targetLength = target.length
-  var len = tag >> TAG_SIZE
-  for (var c = varint.decode.bytes; c < len; ) {
-    var key_tag = varint.decode(buffer, start + c)
+  const targetLength = target.length
+  const len = tag >> TAG_SIZE
+  for (let c = varint.decode.bytes; c < len; ) {
+    const key_tag = varint.decode(buffer, start + c)
     c += varint.decode.bytes
-    var key_len = key_tag >> TAG_SIZE
-    var key_type = key_tag & TAG_MASK
+    const key_len = key_tag >> TAG_SIZE
+    const key_type = key_tag & TAG_MASK
     if (key_type === STRING && targetLength === key_len)
       if (
         buffer.compare(
@@ -34,9 +34,9 @@ function seekKey(buffer, start, target) {
         return start + c + key_len
 
     c += key_len
-    var value_tag = varint.decode(buffer, start + c)
+    const value_tag = varint.decode(buffer, start + c)
     c += varint.decode.bytes
-    var value_len = value_tag >> TAG_SIZE
+    const value_len = value_tag >> TAG_SIZE
     c += value_len
   }
   return -1
@@ -67,15 +67,15 @@ module.exports = {
   seekKey,
 
   seekKey2(buffer, start, target, t_start) {
-    var tag = varint.decode(buffer, start)
-    var type = tag & TAG_MASK
+    const tag = varint.decode(buffer, start)
+    const type = tag & TAG_MASK
     if (type !== OBJECT) return -1
-    var c = varint.decode.bytes
-    var len = tag >> TAG_SIZE
-    var t_tag = varint.decode(target, t_start)
-    var t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
+    let c = varint.decode.bytes
+    const len = tag >> TAG_SIZE
+    const t_tag = varint.decode(target, t_start)
+    const t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
     for (; c < len; ) {
-      var key_tag = varint.decode(buffer, start + c)
+      const key_tag = varint.decode(buffer, start + c)
 
       if (
         key_tag === t_tag &&
@@ -90,12 +90,12 @@ module.exports = {
         return start + c + t_length
 
       c += varint.decode.bytes
-      var key_len = key_tag >> TAG_SIZE
+      const key_len = key_tag >> TAG_SIZE
       c += key_len
 
-      var value_tag = varint.decode(buffer, start + c)
+      const value_tag = varint.decode(buffer, start + c)
       c += varint.decode.bytes
-      var value_len = value_tag >> TAG_SIZE
+      const value_len = value_tag >> TAG_SIZE
       c += value_len
     }
     return -1
@@ -120,9 +120,9 @@ module.exports = {
 
   seekPath(buffer, start, target, target_start) {
     target_start = target_start || 0
-    var ary = decode(target, target_start)
+    const ary = decode(target, target_start)
     if (!Array.isArray(ary)) throw new Error('path must be encoded array')
-    for (var i = 0; i < ary.length; i++) {
+    for (let i = 0; i < ary.length; i++) {
       var string = ary[i]
       start = seekKey(buffer, start, string)
       if (start === -1) return -1

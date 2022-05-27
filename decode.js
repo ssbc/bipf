@@ -27,14 +27,14 @@ function decode_double(buffer, start, length) {
 }
 
 function decode_array(buffer, start, length) {
-  var a = []
-  for (var c = 0; c < length; ) {
-    var tag = varint.decode(buffer, start + c)
-    var type = tag & TAG_MASK
+  const a = []
+  for (let c = 0; c < length; ) {
+    const tag = varint.decode(buffer, start + c)
+    const type = tag & TAG_MASK
     if (type === 7) throw new Error('reserved type')
-    var len = tag >> TAG_SIZE
+    const len = tag >> TAG_SIZE
     c += varint.decode.bytes
-    var value = decode_type(type, buffer, start + c, len)
+    const value = decode_type(type, buffer, start + c, len)
     a.push(value)
     c += len
   }
@@ -42,22 +42,22 @@ function decode_array(buffer, start, length) {
 }
 
 function decode_object(buffer, start, length) {
-  var o = {}
-  for (var c = 0; c < length; ) {
-    var tag = varint.decode(buffer, start + c)
+  const o = {}
+  for (let c = 0; c < length; ) {
+    const tag = varint.decode(buffer, start + c)
     // JavaScript only allows string-valued and Symbol keys for objects
     if (tag & TAG_MASK) throw new Error('required type:string')
-    var len = tag >> TAG_SIZE
+    const len = tag >> TAG_SIZE
     c += varint.decode.bytes
-    var key = decode_string(buffer, start + c, len)
+    const key = decode_string(buffer, start + c, len)
     c += len
 
-    var tag2 = varint.decode(buffer, start + c)
-    var type2 = tag2 & TAG_MASK
+    const tag2 = varint.decode(buffer, start + c)
+    const type2 = tag2 & TAG_MASK
     if (type2 === 7) throw new Error('reserved type:value')
-    var len2 = tag2 >> TAG_SIZE
+    const len2 = tag2 >> TAG_SIZE
     c += varint.decode.bytes
-    var value = decode_type(type2, buffer, start + c, len2)
+    const value = decode_type(type2, buffer, start + c, len2)
     c += len2
     o[key] = value
   }
@@ -94,12 +94,12 @@ function decode_type(type, buffer, start, len) {
 
 function decode(buffer, start) {
   start = start | 0
-  var tag = varint.decode(buffer, start)
-  var type = tag & TAG_MASK
-  var len = tag >> TAG_SIZE
-  var bytes = varint.decode.bytes
+  const tag = varint.decode(buffer, start)
+  const type = tag & TAG_MASK
+  const len = tag >> TAG_SIZE
+  const bytes = varint.decode.bytes
   start += bytes
-  var value = decode_type(type, buffer, start, len)
+  const value = decode_type(type, buffer, start, len)
   decode.bytes = len + bytes
   return value
 }

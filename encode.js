@@ -11,7 +11,7 @@ const {
 } = require('./constants')
 
 //sets buffer, and returns length
-var encoders = [
+const encoders = [
   function String(string, buffer, start) {
     return buffer.write(string, start)
   },
@@ -28,15 +28,15 @@ var encoders = [
     return 8
   },
   function Array(a, buffer, start) {
-    var p = start
-    for (var i = 0; i < a.length; i++) {
+    let p = start
+    for (let i = 0; i < a.length; i++) {
       p += encode(a[i], buffer, p)
     }
     return p - start
   },
   function Object(o, buffer, start) {
-    var p = start
-    for (var k in o) {
+    let p = start
+    for (let k in o) {
       //TODO filter non json types
       p += encode(k, buffer, p)
       p += encode(o[k], buffer, p)
@@ -90,22 +90,22 @@ function getType(value) {
 }
 
 function encodingLength(value) {
-  var type = getType(value)
+  const type = getType(value)
   if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
-  var len = encodingLengthers[type](value)
+  const len = encodingLengthers[type](value)
   return varint.encodingLength(len << TAG_SIZE) + len
 }
 
 function encode(value, buffer, start, _len) {
   start = start | 0
-  var type = getType(value)
+  const type = getType(value)
   if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
-  var len = _len === undefined ? encodingLengthers[type](value) : _len
+  const len = _len === undefined ? encodingLengthers[type](value) : _len
   //  if(!buffer)
   //    buffer = Buffer.allocUnsafe(len)
   //throw new Error('buffer must be provided')
   varint.encode((len << TAG_SIZE) | type, buffer, start)
-  var bytes = varint.encode.bytes
+  const bytes = varint.encode.bytes
   return encoders[type](value, buffer, start + bytes) + bytes
 }
 
@@ -125,8 +125,8 @@ module.exports = {
   encodingLength,
 
   allocAndEncode(value) {
-    var len = encodingLength(value)
-    var buffer = Buffer.allocUnsafe(len)
+    const len = encodingLength(value)
+    const buffer = Buffer.allocUnsafe(len)
     encode(value, buffer, 0)
     return buffer
   },

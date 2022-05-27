@@ -16,12 +16,12 @@ function compare(buffer1, start1, buffer2, start2) {
   //  console.log(start1, start2)
   if (start1 === -1 || start2 === -1) return start1 - start2
 
-  var tag1 = varint.decode(buffer1, start1)
-  var len1 = varint.decode.bytes
-  var tag2 = varint.decode(buffer2, start2)
-  var len2 = varint.decode.bytes
-  var type1 = tag1 & TAG_MASK
-  var type2 = tag2 & TAG_MASK
+  const tag1 = varint.decode(buffer1, start1)
+  const len1 = varint.decode.bytes
+  const tag2 = varint.decode(buffer2, start2)
+  const len2 = varint.decode.bytes
+  const type1 = tag1 & TAG_MASK
+  const type2 = tag2 & TAG_MASK
 
   //null, lowest value
   if (isNull(tag1)) return isNull(tag2) ? 0 : -1
@@ -69,10 +69,10 @@ module.exports = {
   compareString(buffer, start, target) {
     if (start === -1) return null
     target = Buffer.isBuffer(target) ? target : Buffer.from(target)
-    var tag = varint.decode(buffer, start)
+    const tag = varint.decode(buffer, start)
     if ((tag & TAG_MASK) !== STRING) return null
-    var len = tag >> TAG_SIZE
-    var _len = Math.min(target.length, len)
+    const len = tag >> TAG_SIZE
+    const _len = Math.min(target.length, len)
     return (
       buffer.compare(
         target,
@@ -87,12 +87,12 @@ module.exports = {
   compare,
 
   createCompareAt(paths) {
-    var getPaths = paths.map(createSeekPath)
+    const getPaths = paths.map(createSeekPath)
     return function (a, b) {
-      for (var i = 0; i < getPaths.length; i++) {
-        var _a = getPaths[i](a, 0)
-        var _b = getPaths[i](b, 0)
-        var r = compare(a, _a, b, _b)
+      for (let i = 0; i < getPaths.length; i++) {
+        const _a = getPaths[i](a, 0)
+        const _b = getPaths[i](b, 0)
+        const r = compare(a, _a, b, _b)
         if (r) return r
       }
       return 0
