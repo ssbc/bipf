@@ -17,11 +17,11 @@ function seekKey(buffer, start, target) {
   const targetLength = target.length
   const len = tag >> TAG_SIZE
   for (let c = varint.decode.bytes; c < len; ) {
-    const key_tag = varint.decode(buffer, start + c)
+    const keyTag = varint.decode(buffer, start + c)
     c += varint.decode.bytes
-    const key_len = key_tag >> TAG_SIZE
-    const key_type = key_tag & TAG_MASK
-    if (key_type === STRING && targetLength === key_len)
+    const keyLen = keyTag >> TAG_SIZE
+    const keyType = keyTag & TAG_MASK
+    if (keyType === STRING && targetLength === keyLen)
       if (
         buffer.compare(
           target,
@@ -31,13 +31,13 @@ function seekKey(buffer, start, target) {
           start + c + targetLength
         ) === 0
       )
-        return start + c + key_len
+        return start + c + keyLen
 
-    c += key_len
-    const value_tag = varint.decode(buffer, start + c)
+    c += keyLen
+    const valueTag = varint.decode(buffer, start + c)
     c += varint.decode.bytes
-    const value_len = value_tag >> TAG_SIZE
-    c += value_len
+    const valueLen = valueTag >> TAG_SIZE
+    c += valueLen
   }
   return -1
 }
@@ -66,37 +66,37 @@ function createSeekPathSrc(target) {
 module.exports = {
   seekKey,
 
-  seekKey2(buffer, start, target, t_start) {
+  seekKey2(buffer, start, target, targetStart) {
     const tag = varint.decode(buffer, start)
     const type = tag & TAG_MASK
     if (type !== OBJECT) return -1
     let c = varint.decode.bytes
     const len = tag >> TAG_SIZE
-    const t_tag = varint.decode(target, t_start)
-    const t_length = (t_tag >> TAG_SIZE) + varint.decode.bytes
+    const targetTag = varint.decode(target, targetStart)
+    const targetLen = (targetTag >> TAG_SIZE) + varint.decode.bytes
     for (; c < len; ) {
-      const key_tag = varint.decode(buffer, start + c)
+      const keyTag = varint.decode(buffer, start + c)
 
       if (
-        key_tag === t_tag &&
+        keyTag === targetTag &&
         buffer.compare(
           target,
-          t_start,
-          t_length,
+          targetStart,
+          targetLen,
           start + c,
-          start + c + t_length
+          start + c + targetLen
         ) === 0
       )
-        return start + c + t_length
+        return start + c + targetLen
 
       c += varint.decode.bytes
-      const key_len = key_tag >> TAG_SIZE
-      c += key_len
+      const keyLen = keyTag >> TAG_SIZE
+      c += keyLen
 
-      const value_tag = varint.decode(buffer, start + c)
+      const valueTag = varint.decode(buffer, start + c)
       c += varint.decode.bytes
-      const value_len = value_tag >> TAG_SIZE
-      c += value_len
+      const valueLen = valueTag >> TAG_SIZE
+      c += valueLen
     }
     return -1
   },
@@ -118,9 +118,9 @@ module.exports = {
     }
   },
 
-  seekPath(buffer, start, target, target_start) {
-    target_start = target_start || 0
-    const ary = decode(target, target_start)
+  seekPath(buffer, start, target, targetStart) {
+    targetStart = targetStart || 0
+    const ary = decode(target, targetStart)
     if (!Array.isArray(ary)) throw new Error('path must be encoded array')
     for (let i = 0; i < ary.length; i++) {
       var string = ary[i]
