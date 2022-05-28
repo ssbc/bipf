@@ -17,7 +17,6 @@ need to parse the fields you actually read, and using length delimited
 fields instead of escapes, means you do not have to look at every byte
 to parse a field.
 
-
 ### Length delimited collections
 
 Unfortunately, most binary json-like formats (such as msgpack and
@@ -33,8 +32,8 @@ mongodb, and couchdb) use length delimited collections.
 ## Format
 
 Every type of field is encoded with a type tag and a length packed
-into a varint.  This means that short types have a one byte tag, and
-one byte value.  The type is stored in the lowest 3 bits, and the
+into a varint. This means that short types have a one byte tag, and
+one byte value. The type is stored in the lowest 3 bits, and the
 length the higher bits.  Since a varint stores values up to 128 bits
 in a single byte, values less than 16 bytes long have a one byte tag,
 and values up to 8k long have a two byte tag, values up to 1048576
@@ -43,8 +42,10 @@ bytes have a 3 byte tag, and so on.
 ```
 <tag: varint(encoding_length(value) << 3 | type)><value>
 ```
-the type indicates the encoding of the value.
-valid types are:
+
+The type indicates the encoding of the value.
+
+Valid types are:
 
 ```
 STRING  : 0  // utf8 encoded string
@@ -53,18 +54,18 @@ INT     : 2  // little endian 32 bit integer
 DOUBLE  : 3  // little endian 64 bit float
 ARRAY   : 4  // array of any other value
 OBJECT  : 5  // list of string: value pairs
-BOOLNULL: 6  // a boolean, or null.
-EXTENDED: 7  // custom type. specific type should be indicated by varint at start of buffer.
+BOOLNULL: 6  // a boolean, or null
+EXTENDED: 7  // custom type. Specific type should be indicated by varint at start of buffer
 ```
 
 All values must have a correct length field. This makes it possible to
 traverse all fields without looking at the values. Theirfor it is
 possible to quickly jump to any subvalue if you know it's path. If you
 are looking for a particular string, you can also skip any with the
-wrong length!  Since object and array fields also begin with a length,
-you can jump past them if you know the do not contain the value you
-are looking for.  This means that seeking inside a more tree like
-object is more efficient than seeking into a more list like object!
+wrong length! Since object and array fields also begin with a length,
+you can jump past them if you know they do not contain the value you
+are looking for. This means that seeking inside a more tree like
+object is more efficient than seeking inside a more list like object!
 
 ## Performance
 
@@ -72,7 +73,7 @@ This design is optimized for the performance of in-place
 reads. Encoding is expected to be slower because of the need to
 calculate the length of collections before encoding them. If encoding
 is within half as fast as a format intended for encoding perf, that is
-good.  Of course, the intention with an in-place read system is that
+good. Of course, the intention with an in-place read system is that
 you encode _once_ and then never decode. Just pass around the binary
 object, reading fields out when necessary.
 
@@ -93,7 +94,7 @@ doing well! (and a C implementation would likely close that gap)
 The measurement is run 10k operations, then divide by number of ms
 taken, higher number means more faster!
 
-benchmark code is in `./test/perf.js`
+Benchmark code is in `./test/perf.js`
 
 ```
 operation, ops/ms
@@ -112,7 +113,7 @@ binary.compare() 1785.7142857142858
 ```
 
 As expected, `binary.encode` is much slower than `JSON.stringify`, but
-it's only 6 times worse.  But the interesting comparison is
+it's only 6 times worse. But the interesting comparison is
 `JSON.stringify(JSON.parse())` and `binary.seek(buffer)`. Often, in
 implementing a database, you need to read something from disk, examine
 one or two fields (to check if it matches a query) and then write it
@@ -120,12 +121,12 @@ to network.
 
 (note: the `binary.seek` operation is fairly realistic, we seek to the
 "dependencies" object, then look up "varint" inside of that, then
-decode the version range of "varint".  So it's two comparisons and
+decode the version range of "varint". So it's two comparisons and
 decoding a string out)
 
 So, in JSON land, that usually means reading it, parsing it, checking
-it, stringifying it again.  This involves reading each byte in the
-input and allocating memory for the parsed object.  Then traversing
+it, stringifying it again. This involves reading each byte in the
+input and allocating memory for the parsed object. Then traversing
 that object in memory and writing something to a string (more memory
 allocation, and all this memory allocation means the garbage collector
 needs to handle it too)
@@ -143,7 +144,7 @@ fast using a _javascript implementation_ is impressive.
 For a system with signatures, it's highly important that data is
 _cannonical_. There should be exactly one way to encode a given data
 structure. There are a few edge cases here that need to be checked
-for.  (not implemented yet)
+for. (not implemented yet)
 
 * varints must not be zero padded
 * chrome and firefox preserve order of object keys, but any integer
@@ -152,7 +153,7 @@ for.  (not implemented yet)
   container's length. (This is a security issue)
 
 These properties can all be checked by traversing the tags but without
-reading the keys or values.  I will not consider this module _ready_
+reading the keys or values. I will not consider this module _ready_
 until there are tests that cover these invalid cases, to ensure that
 implementations throw an error.
 
@@ -225,7 +226,7 @@ console.log(b.decode(buffer, 0).baz)
 console.log(b.decode(buffer, b.seekKey(buffer, 0, 'baz')))
 ```
 
-see performance section for discussion on the performance of seek - if
+See performance section for discussion on the performance of seek - if
 it's only needed to parse a couple of elements, it can be
 significantly faster than parsing.
 
@@ -248,7 +249,7 @@ an array of node buffers, just holding the key values, not encoded as
 
 ### createSeekPath(path) => seekPath(buffer, start)
 
-compiles a javascript function that does a seekPath. This is
+Compiles a javascript function that does a seekPath. This is
 significantly faster than iterating over a javascript array and then
 looking for each thing, because it will get optimized by the js
 engine's jit compiler.
