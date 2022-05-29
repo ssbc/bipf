@@ -11,6 +11,7 @@
     "varint": "^5.0.0"
   },
   "devDependencies": {
+    "bipf-spec": "^0.1.0",
     "faker": "^5.5.1",
     "husky": "^4.3.8",
     "nyc": "^15.1.0",
@@ -20,7 +21,7 @@
     "tape": "^5.3.1"
   },
   "scripts": {
-    "test": "tape test/index.js | tap-arc && tape test/compare.js | tap-arc",
+    "test": "tape test/index.js | tap-arc && tape test/compare.js | tap-arc && tape test/fixtures.js | tap-arc",
     "coverage": "nyc --reporter=lcov npm test",
     "format-code": "prettier --write \"*.js\" \"test/*.js\"",
     "format-code-staged": "pretty-quick --staged --pattern \"*.js\" --pattern \"test/*.js\"",

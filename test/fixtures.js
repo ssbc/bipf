@@ -1,12 +1,10 @@
 const tape = require('tape')
 const bipf = require('../')
 const fs = require('fs')
+const fixtures = require('bipf-spec/fixtures.json')
 
 tape('fixtures compare', (t) => {
   try {
-    const data = fs.readFileSync('../bipf-spec/fixtures.json')
-    const fixtures = JSON.parse(data)
-
     for (let i = 0; i < fixtures.length; ++i) {
       const f = fixtures[i]
       t.comment(`testing: ${f.name}`)
