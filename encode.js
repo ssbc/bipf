@@ -1,4 +1,7 @@
-const varint = require('varint')
+const varint =
+  typeof BIPF_LARGE_VARINT !== 'undefined'
+    ? require('varint')
+    : require('./varint-small-decode')
 const { TAG_SIZE, TAG_MASK } = require('./constants')
 const {
   STRING,
