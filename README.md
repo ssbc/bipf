@@ -31,32 +31,8 @@ mongodb, and couchdb) use length delimited collections.
 
 ## Format
 
-Every type of field is encoded with a type tag and a length packed
-into a varint. This means that short types have a one byte tag, and
-one byte value. The type is stored in the lowest 3 bits, and the
-length the higher bits.  Since a varint stores values up to 128 bits
-in a single byte, values less than 16 bytes long have a one byte tag,
-and values up to 8k long have a two byte tag, values up to 1048576
-bytes have a 3 byte tag, and so on.
-
-```
-<tag: varint(encoding_length(value) << 3 | type)><value>
-```
-
-The type indicates the encoding of the value.
-
-Valid types are:
-
-```
-STRING  : 0  // utf8 encoded string
-BUFFER  : 1  // raw binary buffer
-INT     : 2  // little endian 32 bit integer
-DOUBLE  : 3  // little endian 64 bit float
-ARRAY   : 4  // array of any other value
-OBJECT  : 5  // list of string: value pairs
-BOOLNULL: 6  // a boolean, or null
-EXTENDED: 7  // custom type. Specific type should be indicated by varint at start of buffer
-```
+The format of BIPF is specificed in the
+[spec](https://github.com/ssbc/bipf-spec).
 
 All values must have a correct length field. This makes it possible to
 traverse all fields without looking at the values. Theirfor it is
