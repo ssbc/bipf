@@ -1,7 +1,7 @@
 {
   "name": "bipf",
   "description": "binary in-place format",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "homepage": "https://github.com/ssbc/bipf",
   "repository": {
     "type": "git",
