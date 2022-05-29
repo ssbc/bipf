@@ -1,6 +1,5 @@
 const tape = require('tape')
 const bipf = require('../')
-const fs = require('fs')
 const fixtures = require('bipf-spec/fixtures.json')
 
 tape('fixtures compare', (t) => {
