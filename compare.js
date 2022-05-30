@@ -1,4 +1,4 @@
-const varint = require('varint')
+const varint = require('fast-varint')
 const { INT, DOUBLE, STRING, TAG_SIZE, TAG_MASK } = require('./constants')
 const { createSeekPath } = require('./seekers')
 

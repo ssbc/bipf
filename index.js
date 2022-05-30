@@ -1,4 +1,4 @@
-const varint = require('varint')
+const varint = require('fast-varint')
 
 const { types, TAG_SIZE, TAG_MASK, OBJECT, ARRAY } = require('./constants')
 const { decode } = require('./decode')
