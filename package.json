@@ -8,7 +8,7 @@
     "url": "git://github.com/ssbc/bipf.git"
   },
   "dependencies": {
-    "varint": "^5.0.0"
+    "fast-varint": "^1.0.0"
   },
   "devDependencies": {
     "faker": "^5.5.1",
