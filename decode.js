@@ -1,4 +1,4 @@
-const varint = require('varint')
+const varint = require('fast-varint')
 const { TAG_SIZE, TAG_MASK } = require('./constants')
 const {
   STRING,
