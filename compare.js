@@ -65,37 +65,39 @@ function compare(buffer1, start1, buffer2, start2) {
   )
 }
 
-module.exports = {
-  compareString(buffer, start, target) {
-    if (start === -1) return null
-    target = Buffer.isBuffer(target) ? target : Buffer.from(target)
-    const tag = varint.decode(buffer, start)
-    if ((tag & TAG_MASK) !== STRING) return null
-    const len = tag >> TAG_SIZE
-    const _len = Math.min(target.length, len)
-    return (
-      buffer.compare(
-        target,
-        0,
-        _len,
-        start + varint.decode.bytes,
-        start + varint.decode.bytes + _len
-      ) || target.length - len
-    )
-  },
+function compareString(buffer, start, target) {
+  if (start === -1) return null
+  target = Buffer.isBuffer(target) ? target : Buffer.from(target)
+  const tag = varint.decode(buffer, start)
+  if ((tag & TAG_MASK) !== STRING) return null
+  const len = tag >> TAG_SIZE
+  const _len = Math.min(target.length, len)
+  return (
+    buffer.compare(
+      target,
+      0,
+      _len,
+      start + varint.decode.bytes,
+      start + varint.decode.bytes + _len
+    ) || target.length - len
+  )
+}
 
-  compare,
-
-  createCompareAt(paths) {
-    const getPaths = paths.map(createSeekPath)
-    return function (a, b) {
-      for (let i = 0; i < getPaths.length; i++) {
-        const _a = getPaths[i](a, 0)
-        const _b = getPaths[i](b, 0)
-        const r = compare(a, _a, b, _b)
-        if (r) return r
-      }
-      return 0
+function createCompareAt(paths) {
+  const getPaths = paths.map(createSeekPath)
+  return function (a, b) {
+    for (let i = 0; i < getPaths.length; i++) {
+      const _a = getPaths[i](a, 0)
+      const _b = getPaths[i](b, 0)
+      const r = compare(a, _a, b, _b)
+      if (r) return r
     }
-  },
+    return 0
+  }
+}
+
+module.exports = {
+  compareString,
+  compare,
+  createCompareAt,
 }
