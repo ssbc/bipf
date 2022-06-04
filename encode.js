@@ -109,25 +109,26 @@ function encode(value, buffer, start, _len) {
   return encoders[type](value, buffer, start + bytes) + bytes
 }
 
+function getEncodedLength(buffer, start) {
+  return varint.decode(buffer, start) >> TAG_SIZE
+}
+
+function getEncodedType(buffer, start) {
+  return varint.decode(buffer, start) & TAG_MASK
+}
+
+function allocAndEncode(value) {
+  const len = encodingLength(value)
+  const buffer = Buffer.allocUnsafe(len)
+  encode(value, buffer, 0)
+  return buffer
+}
+
 module.exports = {
   encode,
-
   getType,
-
-  getEncodedLength(buffer, start) {
-    return varint.decode(buffer, start) >> TAG_SIZE
-  },
-
-  getEncodedType(buffer, start) {
-    return varint.decode(buffer, start) & TAG_MASK
-  },
-
+  getEncodedLength,
+  getEncodedType,
   encodingLength,
-
-  allocAndEncode(value) {
-    const len = encodingLength(value)
-    const buffer = Buffer.allocUnsafe(len)
-    encode(value, buffer, 0)
-    return buffer
-  },
+  allocAndEncode,
 }
