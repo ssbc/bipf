@@ -143,6 +143,50 @@ implementations throw an error.
 write `value` to `buffer` from start.  returns the number of bytes
 used.
 
+### allocAndEncode(value) => buffer
+
+allocate a new buffer and write `value` into it.  returns the newly
+created buffer.
+
+### encodeIdempotent(value, buffer, start) => length
+
+same as `encode`, but *tags* the buffer as being a `bipf` buffer, such
+that you can place this buffer in another encoded bipf, and it won't
+be "double encoded", it will just be embedded inside the larger buffer.
+
+### allocAndEncodeIdempotent(value) => buffer
+
+same as `allocAndEncode`, but *tags* the resulting buffer as being a
+`bipf` buffer.
+
+Example:
+
+```js
+var obj = {address: {street: '123 Main St'}}
+var buf1 = bipf.allocAndEncode(obj)
+
+var innerObj = {street: '123 Main St'}
+var innerBuf = bipf.allocAndEncodeIdempotent(innerObj)
+var outerObj = {address: innerBuf}
+var buf2 = bipf.allocAndEncode(outerObj)
+
+deepEquals(buf1, buf2) // true
+```
+
+Counter-example:
+
+```js
+var obj = {address: {street: '123 Main St'}}
+var buf1 = bipf.allocAndEncode(obj)
+
+var innerObj = {street: '123 Main St'}
+var innerBuf = bipf.allocAndEncode(innerObj)
+var outerObj = {address: innerBuf}
+var buf2 = bipf.allocAndEncode(outerObj)
+
+deepEquals(buf1, buf2) // false
+```
+
 ### decode(buffer, start) => value
 
 read the next value from `buffer` at `start`.  returns the value, and

@@ -1,11 +1,24 @@
 const varint = require('fast-varint')
 
-const { types, TAG_SIZE, TAG_MASK, OBJECT, ARRAY } = require('./constants')
+const {
+  types,
+  TAG_SIZE,
+  TAG_MASK,
+  STRING,
+  BUFFER,
+  INT,
+  DOUBLE,
+  OBJECT,
+  ARRAY,
+  BOOLNULL,
+} = require('./constants')
 const { decode } = require('./decode')
 const {
   encode,
+  encodeIdempotent,
   encodingLength,
   allocAndEncode,
+  allocAndEncodeIdempotent,
   getEncodedLength,
   getEncodedType,
   getType,
@@ -58,8 +71,10 @@ function iterate(buffer, start, iter) {
 
 module.exports = {
   encode,
+  encodeIdempotent,
   decode,
   allocAndEncode,
+  allocAndEncodeIdempotent,
   encodingLength,
   buffer: true,
   slice,

@@ -207,6 +207,14 @@ tape('slice() on an object field', (t) => {
   t.end()
 })
 
+tape('encodeIdempotent()', (t) => {
+  const buf1 = bipf.allocAndEncode({ address: { street: '123 Main St' } })
+  const streetBipf = bipf.allocAndEncodeIdempotent({ street: '123 Main St' })
+  const buf2 = bipf.allocAndEncode({ address: streetBipf })
+  t.deepEquals(buf1, buf2)
+  t.end()
+})
+
 tape('iterate() over an encoded object', (t) => {
   const obj = { x: 10, y: 'foo', z: { age: 80 } }
   const objBuf = bipf.allocAndEncode(obj)
