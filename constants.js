@@ -10,6 +10,8 @@ const OBJECT = 5 // 101
 const BOOLNULL = 6 // 110 // and use the rest of the byte as true/false/null
 const RESERVED = 7 // 111
 
+const ALREADY_BIPF = 8
+
 const TAG_SIZE = 3
 const TAG_MASK = 7
 
@@ -22,6 +24,8 @@ module.exports = {
   OBJECT,
   BOOLNULL,
   RESERVED,
+
+  ALREADY_BIPF,
 
   TAG_SIZE,
   TAG_MASK,

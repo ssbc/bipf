@@ -8,6 +8,7 @@ const {
   ARRAY,
   OBJECT,
   BOOLNULL,
+  ALREADY_BIPF,
 } = require('./constants')
 
 //sets buffer, and returns length
@@ -79,8 +80,11 @@ var encodingLengthers = [
 
 function getType(value) {
   if ('string' === typeof value || value instanceof Date) return STRING
-  else if (Buffer.isBuffer(value)) return BUFFER
-  else if (Number.isInteger(value) && Math.abs(value) <= 2147483647) return INT
+  else if (Buffer.isBuffer(value)) {
+    if (value._IS_BIPF_ENCODED) return ALREADY_BIPF
+    else return BUFFER
+  } else if (Number.isInteger(value) && Math.abs(value) <= 2147483647)
+    return INT
   else if ('number' === typeof value && Number.isFinite(value))
     //do not support Infinity or NaN (because JSON)
     return DOUBLE
@@ -92,6 +96,7 @@ function getType(value) {
 function encodingLength(value) {
   const type = getType(value)
   if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
+  if (type === ALREADY_BIPF) return value.length
   const len = encodingLengthers[type](value)
   return varint.encodingLength(len << TAG_SIZE) + len
 }
@@ -100,6 +105,10 @@ function encode(value, buffer, start, _len) {
   start = start | 0
   const type = getType(value)
   if (type === void 0) throw new Error('unknown type: ' + JSON.stringify(value))
+  if (type === ALREADY_BIPF) {
+    value.copy(buffer, start, 0, value.length)
+    return value.length
+  }
   const len = _len === undefined ? encodingLengthers[type](value) : _len
   //  if(!buffer)
   //    buffer = Buffer.allocUnsafe(len)
@@ -107,6 +116,12 @@ function encode(value, buffer, start, _len) {
   varint.encode((len << TAG_SIZE) | type, buffer, start)
   const bytes = varint.encode.bytes
   return encoders[type](value, buffer, start + bytes) + bytes
+}
+
+function encodeIdempotent(value, buffer, start) {
+  encode(value, buffer, start)
+  buffer._IS_BIPF_ENCODED = true
+  return buffer
 }
 
 function getEncodedLength(buffer, start) {
@@ -124,11 +139,20 @@ function allocAndEncode(value) {
   return buffer
 }
 
+function allocAndEncodeIdempotent(value) {
+  const len = encodingLength(value)
+  const buffer = Buffer.allocUnsafe(len)
+  encodeIdempotent(value, buffer, 0)
+  return buffer
+}
+
 module.exports = {
   encode,
+  encodeIdempotent,
   getType,
   getEncodedLength,
   getEncodedType,
   encodingLength,
   allocAndEncode,
+  allocAndEncodeIdempotent,
 }
