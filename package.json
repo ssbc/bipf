@@ -7,6 +7,9 @@
     "type": "git",
     "url": "git://github.com/ssbc/bipf.git"
   },
+  "files": [
+    "*.js"
+  ],
   "dependencies": {
     "fast-varint": "^1.0.0"
   },
