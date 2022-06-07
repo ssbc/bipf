@@ -138,6 +138,10 @@ implementations throw an error.
 `encode, decode, encodingLength` follow the interface specified by
 [`abstract-encoding`](https://github.com/mafintosh/abstract-encoding)
 
+### encodingLength(value) => length
+
+returns the length needed to encode `value`
+
 ### encode(value, buffer, start) => length
 
 write `value` to `buffer` from start.  returns the number of bytes
@@ -192,9 +196,10 @@ deepEquals(buf1, buf2) // false
 read the next value from `buffer` at `start`.  returns the value, and
 sets `decode.bytes` to number of bytes used.
 
-### encodingLength(value) => length
+### pluck(buffer, start) => buffer
 
-returns the length needed to encode `value`
+reads the value from BIPF-encoded `buffer` at `start`, and returns the
+*encoded* value at that pointer, without decoding it.
 
 ### getValueType(value) => type
 
