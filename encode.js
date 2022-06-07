@@ -119,9 +119,9 @@ function encode(value, buffer, start, _len) {
 }
 
 function encodeIdempotent(value, buffer, start) {
-  encode(value, buffer, start)
+  const len = encode(value, buffer, start)
   buffer._IS_BIPF_ENCODED = true
-  return buffer
+  return len
 }
 
 function markIdempotent(buffer) {
