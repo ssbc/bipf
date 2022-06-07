@@ -16,6 +16,8 @@ const { decode } = require('./decode')
 const {
   encode,
   encodeIdempotent,
+  markIdempotent,
+  isIdempotent,
   encodingLength,
   allocAndEncode,
   allocAndEncodeIdempotent,
@@ -78,6 +80,8 @@ function iterate(buffer, start, iter) {
 module.exports = {
   encode,
   encodeIdempotent,
+  markIdempotent,
+  isIdempotent,
   decode,
   allocAndEncode,
   allocAndEncodeIdempotent,

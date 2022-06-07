@@ -124,6 +124,15 @@ function encodeIdempotent(value, buffer, start) {
   return buffer
 }
 
+function markIdempotent(buffer) {
+  buffer._IS_BIPF_ENCODED = true
+  return buffer
+}
+
+function isIdempotent(buffer) {
+  return !!buffer._IS_BIPF_ENCODED
+}
+
 function getEncodedLength(buffer, start) {
   return varint.decode(buffer, start) >> TAG_SIZE
 }
@@ -149,6 +158,8 @@ function allocAndEncodeIdempotent(value) {
 module.exports = {
   encode,
   encodeIdempotent,
+  markIdempotent,
+  isIdempotent,
   getType,
   getEncodedLength,
   getEncodedType,

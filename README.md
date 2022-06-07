@@ -191,6 +191,19 @@ var buf2 = bipf.allocAndEncode(outerObj)
 deepEquals(buf1, buf2) // false
 ```
 
+### markIdempotent(buffer) => buffer
+
+does nothing else but *tag* the buffer as being a `bipf` buffer, such
+that you can place it in another encoded bipf, and it won't be "double
+encoded", it will just be embedded inside the larger buffer.
+
+returns the same buffer as the input.
+
+### isIdempotent(buffer) => boolean
+
+returns true if `buffer` received an `encodeIdempotent()` call or a
+`markIdempotent()` call.
+
 ### decode(buffer, start) => value
 
 read the next value from `buffer` at `start`.  returns the value, and

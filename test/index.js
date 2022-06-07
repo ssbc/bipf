@@ -219,6 +219,18 @@ tape('pluck() on an object', (t) => {
 tape('encodeIdempotent()', (t) => {
   const buf1 = bipf.allocAndEncode({ address: { street: '123 Main St' } })
   const streetBipf = bipf.allocAndEncodeIdempotent({ street: '123 Main St' })
+  t.true(bipf.isIdempotent(streetBipf))
+  const buf2 = bipf.allocAndEncode({ address: streetBipf })
+  t.deepEquals(buf1, buf2)
+  t.end()
+})
+
+tape('tagIdempotent()', (t) => {
+  const buf1 = bipf.allocAndEncode({ address: { street: '123 Main St' } })
+  const streetBipf = bipf.markIdempotent(
+    bipf.allocAndEncode({ street: '123 Main St' })
+  )
+  t.true(bipf.isIdempotent(streetBipf))
   const buf2 = bipf.allocAndEncode({ address: streetBipf })
   t.deepEquals(buf1, buf2)
   t.end()
