@@ -41,6 +41,12 @@ function slice(buffer, start) {
   )
 }
 
+function pluck(buffer, start) {
+  const tagValue = varint.decode(buffer, start)
+  const length = tagValue >> TAG_SIZE
+  return buffer.slice(start, start + varint.decode.bytes + length)
+}
+
 function iterate(buffer, start, iter) {
   const tag = varint.decode(buffer, start)
   const len = tag >> TAG_SIZE
@@ -78,6 +84,7 @@ module.exports = {
   encodingLength,
   buffer: true,
   slice,
+  pluck,
   getValueType: getType,
   getEncodedLength,
   getEncodedType,

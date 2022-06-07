@@ -207,6 +207,15 @@ tape('slice() on an object field', (t) => {
   t.end()
 })
 
+tape('pluck() on an object', (t) => {
+  const ageEncoded = bipf.allocAndEncode({ age: 3 })
+  const objEncoded = bipf.allocAndEncode({ x: 'foo', y: { age: 3 } })
+  const pointer = bipf.seekKey(objEncoded, 0, Buffer.from('y', 'utf-8'))
+  const plucked = bipf.pluck(objEncoded, pointer)
+  t.deepEquals(plucked, ageEncoded)
+  t.end()
+})
+
 tape('encodeIdempotent()', (t) => {
   const buf1 = bipf.allocAndEncode({ address: { street: '123 Main St' } })
   const streetBipf = bipf.allocAndEncodeIdempotent({ street: '123 Main St' })
