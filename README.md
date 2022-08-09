@@ -35,7 +35,7 @@ The format of BIPF is specificed in the
 [spec](https://github.com/ssbc/bipf-spec).
 
 All values must have a correct length field. This makes it possible to
-traverse all fields without looking at the values. Theirfor it is
+traverse all fields without looking at the values. Therefore it is
 possible to quickly jump to any subvalue if you know it's path. If you
 are looking for a particular string, you can also skip any with the
 wrong length! Since object and array fields also begin with a length,
@@ -54,7 +54,7 @@ you encode _once_ and then never decode. Just pass around the binary
 object, reading fields out when necessary.
 
 Because of the length encoding, the ability to update in-place is very
-limited (not recommended actualy) but if you are building a system
+limited (not recommended actually) but if you are building a system
 around immutable data, that is not much of a problem. Although, since
 subobjects are fully valid as an encoded value, you can easily copy a
 subobject into a new object, etc, without re-encoding.
